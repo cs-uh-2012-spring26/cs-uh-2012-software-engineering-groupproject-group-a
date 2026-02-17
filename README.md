@@ -6,20 +6,20 @@ This repo provides a template for setting up a flask rest API server. As a start
 
 - python 3.10 or higher
 - MongoDB installed. Follow [https://www.mongodb.com/docs/manual/installation/](https://www.mongodb.com/docs/manual/installation/)
-to install MongoDB locally. Select the right link for your operating system.
+  to install MongoDB locally. Select the right link for your operating system.
 
 ## Tech Stack
 
 This flask web app uses:
 
 - [Flask-RESTX][flask-restx] for creating REST APIs. Directory structure
-follows [flask restx instructions on scaling your project][flask-restx-scaling]
-  - flask-restx automatically generates
-  [OpenAPI specifications][openapi-specification] for your API
+  follows [flask restx instructions on scaling your project][flask-restx-scaling]
+    - flask-restx automatically generates
+      [OpenAPI specifications][openapi-specification] for your API
 - [PyMongo][pymongo] for communicating with the mongodb database
 - [pytest][pytest] for testing
-(see [flask specific testing instructions on pytest][pytest-flask]
-for more info specific to testing Flask applications)
+  (see [flask specific testing instructions on pytest][pytest-flask]
+  for more info specific to testing Flask applications)
 - [mongomock][mongomock] for mocking the mongodb during unit testing
 
 [flask-restx]: https://flask-restx.readthedocs.io/en/latest/quickstart.html
@@ -40,7 +40,7 @@ Find the equivalent for your OS)
 ### Setting up the environment
 
 1. Check `.samplenv` file and follow the instructions there to create
-your `.env` file
+   your `.env` file
 2. Run `make dev_env` to create a virtual environment and install dependencies
 
 ### Running the server
