@@ -2,6 +2,11 @@ from mongomock import MongoClient as mongomockClient
 from pymongo import MongoClient as pyMongoClient
 from pymongo.database import Collection, Database
 
+TRAINERCODES = [
+    "TRAINER123",
+    "IAMATRAINER",
+    "NEWADMIN"
+]
 
 class DB:
     _db: None | Database = None
