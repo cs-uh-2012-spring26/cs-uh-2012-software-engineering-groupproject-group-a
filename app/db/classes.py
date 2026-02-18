@@ -19,7 +19,26 @@ class ClassResource:
     # class_name
     # member_list
     # trainer_id
-    # capactiy
+    # capacity
     # start_date
     # end_date
     # location
+
+    def create_class(self, class_name: str, start_date: str, end_date: str, location: str, capacity: int, trainer_id: str):
+        class_data = {
+            "class_name": class_name,
+            "start_date": start_date,
+            "end_date": end_date,
+            "location": location,
+            "capacity": capacity,
+            "trainer_id": trainer_id,
+            "member_list": []
+        }
+
+        result = self.collection.insert_one(class_data)
+        created = self.collection.find_one({"_id": result.inserted_id})
+        return serialize_item(created)
+
+    # def get_class(self, class_id):
+    #     item = self.collection.find_one({"_id": class_id})
+    #     return serialize_item(item)
