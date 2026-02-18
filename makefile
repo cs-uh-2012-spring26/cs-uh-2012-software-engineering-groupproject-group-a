@@ -35,6 +35,9 @@ endif
 run_local_server: dev_env tests
 	$(ACTIVATE) && FLASK_APP=app flask run --debug --host=0.0.0.0 --port 8000
 
+run_server:
+	$(ACTIVATE) && FLASK_APP=app flask run --debug --host=0.0.0.0 --port 8000
+
 tests: pytests
 
 dev_env:
