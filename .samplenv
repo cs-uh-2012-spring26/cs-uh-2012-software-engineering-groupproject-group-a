@@ -3,5 +3,8 @@ MONGO_URI="mongodb://localhost:27017"
 DB_NAME="fitness_booking_db"
 MOCK_DB="false"
 
+# JWT
+JWT_SECRET_KEY="78b798637dd44b7042ebbf339a887669a2e8a0d055da6fde1e7c68fcda3c8ac8"
+
 # server config
 DEBUG="true"

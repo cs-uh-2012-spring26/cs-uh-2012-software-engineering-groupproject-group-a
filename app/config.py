@@ -23,3 +23,8 @@ class Config(object):
     MOCK_DB = get_required_environ("MOCK_DB").lower() == "true"
     DEBUG = get_required_environ("DEBUG").lower() == "true"
 
+    # JWT for auth
+    JWT_SECRET_KEY = get_required_environ("JWT_SECRET_KEY")
+    JWT_TOKEN_LOCATION = ["headers"]
+    JWT_HEADER_NAME = "Authorization"
+    JWT_HEADER_TYPE = "Bearer"

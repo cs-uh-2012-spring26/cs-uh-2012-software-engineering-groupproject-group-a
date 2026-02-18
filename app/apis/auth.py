@@ -1,5 +1,7 @@
 from flask_restx import Namespace, Resource, fields
 from flask import request
+from flask_jwt_extended import create_access_token
+import datetime
 from http import HTTPStatus
 from app.apis import MSG
 from app.apis import MSG
@@ -9,6 +11,7 @@ api = Namespace(
     "auth", description="API endpoints for authentication"
 )
 
+# general input models
 register_model = api.model("Register", {
     "full_name": fields.String(required=True, description="Full name", example="John Doe"),
     "username": fields.String(required=True, description="Username", example="john_doe"),
@@ -21,18 +24,21 @@ login_model = api.model("Login", {
     "password": fields.String(required=True, description="Password", example="securepass123")
 })
 
-auth_success_model = api.model("AuthSuccess", {
-    MSG: fields.String(example="Logged in successfully")
+# success or error models
+login_success_model = api.model("LoginSuccess", {
+    MSG: fields.String(example="Logged in successfully"),
+    "access_token": fields.String(example="hjX02ksdkKkjqD...")
 })
 
 register_success_model = api.model("RegisterSuccess", {
     MSG: fields.String(example="User registered successfully")
 })
 
-auth_error_model = api.model("AuthError", {
+login_error_model = api.model("LoginError", {
     MSG: fields.String(example="Bad credentials")
 })
 
+# register endpoint
 @api.route("/register")
 class Register(Resource):
     @api.doc(
@@ -41,10 +47,11 @@ class Register(Resource):
                 "username": "Unique username per user",
                 "password": "User password for registration to be hashed",
                 "trainer_code": "(Optional) Trainer Code"
-            }
+            },
+            description="Register a new user account"
         )
     @api.response(HTTPStatus.CREATED, "Registration successful", register_success_model)
-    @api.response(HTTPStatus.BAD_REQUEST, "Invalid input or user already exists", auth_error_model)
+    @api.response(HTTPStatus.BAD_REQUEST, "Invalid input or user already exists", login_error_model)
     @api.response(
         HTTPStatus.NOT_ACCEPTABLE,
         "Invalid Request",
@@ -55,7 +62,6 @@ class Register(Resource):
     )
 
     @api.expect(register_model, validate=True)
-    @api.doc(description="Register a new user account")
     def post(self):
 
         # collect fields and validate
@@ -97,3 +103,65 @@ class Register(Resource):
             return {MSG: "User registered successfully"}, HTTPStatus.CREATED
         
         return {MSG: "Registration failed"}, HTTPStatus.BAD_REQUEST
+
+# login endpoint
+@api.route("/login")
+class Login(Resource):
+    @api.doc(
+            params={
+                "username": "Username for existing account",
+                "password": "Password for the associated username"
+            },
+            description="Log into an exisiting account with username and password"
+        )
+    @api.response(HTTPStatus.OK, "Login successful", login_success_model)
+    @api.response(HTTPStatus.UNAUTHORIZED, "Invalid credentials", login_error_model)
+    @api.response(
+        HTTPStatus.NOT_ACCEPTABLE,
+        "Invalid Request",
+        api.model(
+            "Login: Bad Request",
+            {MSG: fields.String("Invalid value provided for one of the fields")},
+        ),
+    )
+
+    @api.expect(login_model, validate=True)
+    def post(self):
+
+        # collect fields and validate
+        assert isinstance(request.json, dict)
+        username = request.json.get("username")
+        password = request.json.get("password")
+
+        if not (
+            isinstance(username, str)
+            and len(username) > 0
+            and isinstance(password, str)
+            and len(password) > 0
+        ):
+            return {
+                MSG: "Invalid value provided for one of the fields"
+            }, HTTPStatus.NOT_ACCEPTABLE
+
+        user_resource = UserResource()
+
+        if user_resource.check_password(username, password):
+
+            # get role for token
+            user = user_resource.get_user(username)
+            assert isinstance(user, dict)
+            
+            access_token = create_access_token(
+                identity=username,
+                additional_claims={
+                    "role": user.get("role", "member"),  # Add role to token
+                    "full_name": user.get("full_name")   # Can add other data too
+                },
+                expires_delta=datetime.timedelta(hours=24)
+            )
+            return {
+                MSG: "Logged in successfully",
+                "access_token": access_token
+            }, HTTPStatus.OK
+        
+        return {MSG: "Bad credentials"}, HTTPStatus.UNAUTHORIZED
