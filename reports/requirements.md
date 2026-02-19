@@ -6,7 +6,31 @@ Date met with client: 10 February, 2026
 
 Before meeting the client, we met with our group to carefully review the details for Sprint 1.
 
-- TODO: writeout all elicitation techniques used
+The main elicitation technique used was a semi-structured interview. We had prepared questions to clarify each feature before meeting with the client.
+
+1. Feature 1: Create Class
+   1. Who is authorized to create a class?
+   1. Do classes have fixed capacity?
+   1. What is the information needed for the creation of each fitness class?
+
+1. View Class List (Public Page)
+   1. Is there a difference between a member and guest?
+   1. Should users be logged in to view the classes?
+
+1. Feature 3: Book a Class
+   1. Should we prevent users from joining clashing classes? Is there a limit on how many classes a user can join?
+
+1. Feature 4: View Member/Guest List of a Class
+   1. Can class trainer or center admin remove people from classes / ban them from the system?
+   1. Should users be authorized to view the classes?
+
+We also asked general questions regarding the roles and the app in general:
+
+- Can you clarify the roles we have?
+- Should we have different registration options for a member and a trainer?
+- Is a frontend required?
+- Can classes be dropped?
+- Can we restrict certain classes to different ages?
 
 ## Reflection on Techniques and Important Clarifications
 
@@ -43,9 +67,9 @@ Before meeting the client, we met with our group to carefully review the details
 **Alternative Flows / Extensions**
 
 1. point
-    1. point
+   1. point
 2. point
-    1. point
+   1. point
 
 **Success Guarantee / Postconditions**
 
@@ -68,9 +92,9 @@ Before meeting the client, we met with our group to carefully review the details
 **Alternative Flows / Extensions**
 
 1. point
-    1. point
+   1. point
 2. point
-    1. point
+   1. point
 
 **Success Guarantee / Postconditions**
 
@@ -93,9 +117,9 @@ Before meeting the client, we met with our group to carefully review the details
 **Alternative Flows / Extensions**
 
 1. point
-    1. point
+   1. point
 2. point
-    1. point
+   1. point
 
 **Success Guarantee / Postconditions**
 
@@ -118,9 +142,9 @@ Before meeting the client, we met with our group to carefully review the details
 **Alternative Flows / Extensions**
 
 1. point
-    1. point
+   1. point
 2. point
-    1. point
+   1. point
 
 **Success Guarantee / Postconditions**
 
