@@ -81,7 +81,8 @@ class CreateClass(Resource):
         user_resource = UserResource()
         user = user_resource.get_user(current_user)
         trainer_id = user.get("_id") if isinstance(user, dict) and user.get("_id") else current_user
-
+        assert isinstance(trainer_id, str)
+        
         class_resource = ClassResource()
         created = class_resource.create_class(
             class_name=class_name,
