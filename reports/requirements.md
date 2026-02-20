@@ -101,26 +101,25 @@ We also clarified the system would have three user types: admin, member, and gue
 
 ---
 
-**Use Case Name**: use case name
+**Use Case Name**: View all available classes
 
 **Preconditions**
 
-- points
+- No authentication necessary
 
 **Main Success Scenario**
 
-1. points
+1. User sends request to retrieve classes.
+2. System fetches records from DB.
+3. System returns 200 OK with list of class objects.
 
 **Alternative Flows / Extensions**
 
-1. point
-   1. point
-2. point
-   1. point
+1. No classes exist in database system returns 200 OK with empty list.
 
 **Success Guarantee / Postconditions**
 
-- points
+1. No data modified
 
 ### Feature 3: Book a Class
 
@@ -214,3 +213,31 @@ We also clarified the system would have three user types: admin, member, and gue
 - The list may be empty if no users have booked the class.
 - Only the trainer who owns the class can successfully retrieve the member list.
 
+### Feature 5: Log in
+
+---
+
+**Use Case Name**: User logs in
+
+**Preconditions**
+
+- User has previously registered an account.
+
+**Main Success Scenario**
+
+1. User sends login request with username and password in JSON body.
+2. System validates that both fields are strings and non-empty.
+3. System validates password against hash for the respective username.
+4. System generates JWT access token valid for user role.
+5. System returns 200 OK and access token.
+
+**Alternative Flows / Extensions**
+
+1. Missing or empty fields.
+   1. System notifies with message about invalid value provided with 406 Not Acceptable.
+2. Incorrect username or password.
+   1. System return message about incorrect credentials with 401 Unauthorized.
+
+**Success Guarantee / Postconditions**
+
+- User has access to features of his account type after logging in.
