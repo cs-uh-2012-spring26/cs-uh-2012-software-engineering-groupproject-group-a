@@ -60,6 +60,35 @@ book_class_bad_request = api.model("BookClassBadRequest", {
     MSG: fields.String(example="Failed to book class")
 })
 
+# documented response schema for swagger
+# defines required fields, data types, brief description
+class_model = api.model("Class", { # Swagger documentation for UI
+    "_id": fields.String(description="Class ID"),
+    "class_name": fields.String(description="Class name"),
+    "start_date": fields.String(description="Start datetime"),
+    "end_date": fields.String(description="End datetime"),
+    "location": fields.String(description="Location"),
+    "capacity": fields.Integer(description="Capacity"),
+    "trainer_id": fields.String(description="Trainer ID"),
+    "member_list": fields.List(fields.String, description="Booked usernames"),
+})
+
+# for swagger documentation
+# list of classes. each item has shape of class_model defined above
+
+view_classes_success = api.model("ViewClassesSuccess", {
+    "classes": fields.List(fields.Nested(class_model))
+})
+
+@api.route("") # default for GET/classes
+class ClassList(Resource):
+    @api.doc(description="Get all available classes (publicly available)")
+    @api.response(HTTPStatus.OK, "List of classes", view_classes_success)
+    def get(self):
+        class_resource = ClassResource() # instance of class resource class in db/classes.py for talking to
+        classes = class_resource.get_all_classes() # use function defined in db/classes.py
+        return {"classes": classes}, HTTPStatus.OK
+
 @api.route("/create-class")
 
 class CreateClass(Resource):
