@@ -39,15 +39,15 @@ We also asked general questions regarding the roles and the app in general:
 
 ## Reflection on Techniques and Important Clarifications
 
-<!-- TODO -->
+### Selected Techniques Reflection
 
-- include a short reflection on (1) whether your selected techniques were useful or if you'd change them in retrospect and (2) one example of important clarifications gained through the meeting.
+Overall, our primary technique of a semi-structured interview worked really well in providing us with all details and insights needed to successfully implement and break down the 4 required features into their respective use cases. Since this was the first meeting we had with the client, it was important to get a general understanding of the implementation needed, and these ellicitation techniques gave us the ability to freely ask our main guiding questions, follow-up questions, and so on, together as a group. Since we have the foundational implementation complete, moving forward, we might adjust our techniques to better reflect the needs of further sprints. For example, if the next sprint will focus on more technical and complex additions or adjustments, we might provide various examples for implementation, or a use a comperative approach for clarification.
+
+### Example of Important Clarifications Gained
+
+TODO: write out the clarifications gained.
 
 # Requirements Specification
-
-<!-- this section needs to have:
-    - use case diagram
-    - and fleshed out use cases for all four features -->
 
 ## UML use case diagram for Sprint 1 Features
 
