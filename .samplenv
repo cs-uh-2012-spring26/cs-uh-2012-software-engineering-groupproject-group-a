@@ -1,4 +1,5 @@
-# database configs
+# for local testing purposes, it is enough to copy this directly into a .env
+# add database configs
 MONGO_URI="mongodb://localhost:27017"
 DB_NAME="fitness_booking_db"
 MOCK_DB="false"
