@@ -46,6 +46,7 @@ Find the equivalent for your OS)
 ### Running the server
 
 1. Run `make run_local_server` to run the server. This will also run the tests first.
+2. Run `make run_server` to run the server without runings the tests.
 2. Go to [http://127.0.0.1:8000](http://127.0.0.1:8000) to see it running!
 
 You can use `ctrl-c` to stop the server.

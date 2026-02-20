@@ -203,3 +203,56 @@ class ClassBooking(Resource):
             return {MSG: "User already booked this class"}, HTTPStatus.CONFLICT
 
         return {MSG: "Failed to book class"}, HTTPStatus.BAD_REQUEST
+
+view_members_success = api.model("ViewMembersSuccess", {
+    "members": fields.List(fields.String, description="List of usernames booked in the class")
+}) # swagger ui response for success
+
+view_members_not_found = api.model("ViewMembersNotFound", {
+    MSG: fields.String(example="Class not found")
+}) # swagger ui response for no class found
+
+view_members_invalid_id = api.model("ViewMembersInvalidId", {
+    MSG: fields.String(example="Invalid class id")
+}) # swagger ui response for invalid class id
+
+view_members_forbidden = api.model("ViewMembersForbidden", {
+    MSG: fields.String(example="Only the trainer of this class can view its members")
+}) # swagger ui response for unauthorized role
+
+@api.route("/<string:class_id>/members") # accessible by going to /classid/members
+class ClassMembers(Resource):
+    @jwt_required() # requires bearer token on swagger to view this (not available to non-trainers)
+    @api.doc(
+        security="Bearer", # need jwt token
+        params={"class_id": "Class ID (Mongo ObjectId string)"},
+        description="View member list of a class (trainers only)" # human readable descrip in swagger
+    )
+    @api.response(HTTPStatus.OK, "Member list", view_members_success) # types of possible responses
+    @api.response(HTTPStatus.NOT_FOUND, "Class not found", view_members_not_found) # calls appropriate response defined in this file
+    @api.response(HTTPStatus.UNPROCESSABLE_ENTITY, "Invalid class id", view_members_invalid_id)
+    @api.response(HTTPStatus.FORBIDDEN, "Role not allowed", view_members_forbidden)
+    def get(self, class_id):
+        claims = get_jwt()
+        user_role = claims.get("role") # extract user role
+
+        if user_role not in {"trainer"}: # only for trainers
+            return {MSG: "Only trainers allowed"}, HTTPStatus.FORBIDDEN # throw appropriate http response
+
+        # get trainer's user ID to verify ownership of the class
+        current_user = get_jwt_identity()
+        user_resource = UserResource()
+        user = user_resource.get_user(current_user)
+        trainer_id = user.get("_id") if isinstance(user, dict) and user.get("_id") else None
+
+        class_resource = ClassResource()
+        result = class_resource.get_class_members(class_id, trainer_id) # get class members for this class
+
+        if result == "invalid_class_id": # handling possible responses of the get_class_members method
+            return {MSG: "Invalid class id"}, HTTPStatus.UNPROCESSABLE_ENTITY
+        if result == "class_not_found":
+            return {MSG: "Class not found"}, HTTPStatus.NOT_FOUND
+        if result == "not_your_class":
+            return {MSG: "Only the trainer of this class can view its members"}, HTTPStatus.FORBIDDEN
+
+        return {"members": result}, HTTPStatus.OK # otherwise return result, all went well

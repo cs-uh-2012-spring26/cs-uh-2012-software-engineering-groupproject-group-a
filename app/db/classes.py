@@ -44,6 +44,22 @@ class ClassResource:
     def get_all_classes(self):
         classes = list(self.collection.find()) # finding all classes
         return serialize_items(classes) # converts mongoDB objects to string so we can return as json
+      
+    def get_class_members(self, class_id: str, requesting_trainer_id: str | None = None): # get members of some specific class
+        try:
+            class_oid = ObjectId(class_id) # mongodb stores ids as objectid type, try to conver
+        except (InvalidId, TypeError):
+            return "invalid_class_id" # cannot convert to object id type
+
+        fitness_class = self.collection.find_one({"_id": class_oid}) # look for the class in the database
+        if not fitness_class:
+            return "class_not_found"
+
+        # check that the requesting trainer owns this class
+        if requesting_trainer_id is not None and fitness_class.get("trainer_id") != requesting_trainer_id:
+            return "not_your_class"
+
+        return fitness_class.get("member_list", []) # extract member list from
 
     def book_class(self, username: str, class_id: str, user_id: str | None = None) -> str:
         try:
