@@ -59,26 +59,35 @@ We also asked general questions regarding the roles and the app in general:
 
 ---
 
-**Use Case Name**: use case name
+**Use Case Name**: Create fitness class
 
 **Preconditions**
 
-- points
+- User is authenticated as `trainer`.
 
 **Main Success Scenario**
 
-1. points
+1. User sends a create class request `POST /classes/create-class` with class details in JSON body.
+1. System validates that role is `trainer`.
+1. System validates input types/values (all fields present and valid, capacity > 0).
+1. System creates a new class record in the database with `class_name, start_date, end_date, location, capacity, trainer_id,` and `member_list` initialized as an empty list.
+1. System returns `201` Created with success message and the new `class_id`
 
 **Alternative Flows / Extensions**
 
-1. point
-   1. point
-2. point
-   1. point
+1. Role not allowed (not `trainer`)
+   1. System returns `403` `Forbidden` with message `"Only trainers allowed"`.
+2. Invalid field values / types
+   1. System returns `406 Not Acceptable` with message `"Invalid value provided for one of the fields"`.
+3. Create operation fails
+   1. System returns `400 Bad Request` with message `"Failed to create class"`.
 
 **Success Guarantee / Postconditions**
 
-- points
+- A new class exists in the database.
+- Class has a `unique_id` (returned as `class_id`).
+- `trainer_id` is stored for ownership checks.
+- `member_list` is initialized as [].
 
 ### Feature 2: View Class List
 
@@ -120,6 +129,7 @@ We also asked general questions regarding the roles and the app in general:
 - If user is a trainer, they are not the creator of that class.
 
 **Main Success Scenario**
+
 1. User sends a booking request for a class (`POST /classes/{class_id}/book`).
 2. System validates authentication token.
 3. System validates that role is allowed (`member` or `trainer`).
@@ -128,6 +138,7 @@ We also asked general questions regarding the roles and the app in general:
 6. System returns success message.
 
 **Alternative Flows / Extensions**
+
 1. Invalid class id format
    1. System returns `422 Unprocessable Entity` with message "Invalid class id".
 2. Class not found
@@ -142,6 +153,7 @@ We also asked general questions regarding the roles and the app in general:
    1. System returns `400 Bad Request`.
 
 **Success Guarantee / Postconditions**
+
 - Username is stored in the class `member_list`.
 - Booking is visible in later class/member-list queries.
 - Duplicate booking is not created.
@@ -150,23 +162,46 @@ We also asked general questions regarding the roles and the app in general:
 
 ---
 
-**Use Case Name**: use case name
+**Use Case Name**: View Class Member List
 
 **Preconditions**
 
-- points
+- User role is `trainer`.
+- The class ID is a valid.
+- The target class exists.
+- The requesting trainer is the owner of the class (`class.trainer_id` matches the `trainer_id`).
 
 **Main Success Scenario**
 
-1. points
+1. User sends a request to retrieve the member list  
+   (`GET /classes/{class_id}/members`).
+2. System validates authentication token.
+3. System validates that the user role is `trainer`.
+4. System retrieves the trainer’s user record and extracts their `_id`.
+5. System validates the `class_id` format (ObjectId conversion).
+6. System retrieves the class from the database.
+7. System verifies that the class belongs to the requesting `trainer`.
+8. System returns `200 OK` with:
+   ```json
+   {
+     "members": ["username1", "username2", "..."]
+   }
+   ```
 
 **Alternative Flows / Extensions**
 
-1. point
-   1. point
-2. point
-   1. point
+1. Invalid class id format
+   1. System returns `422 Unprocessable Entity` with message `"Invalid class id"`.
+2. Class not found
+   1. System returns `404 Not Found` with message `"Class not found"`.
+3. Role not allowed
+   1. System returns `403 Forbidden` with message `"Only trainers allowed"`.
+4. Trainer does not own this class
+   1. System returns `403 Forbidden` with message `"Only the trainer of this class can view its members"`.
 
 **Success Guarantee / Postconditions**
 
-- points
+- The trainer receives `200 OK` with the current member list.
+- The returned `members` list accurately reflects the stored `member_list` in the database.
+- The list may be empty if no users have booked the class.
+- Only the trainer who owns the class can successfully retrieve the member list.
