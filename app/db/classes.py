@@ -41,6 +41,10 @@ class ClassResource:
         created = self.collection.find_one({"_id": result.inserted_id})
         return serialize_item(created)
 
+    def get_all_classes(self):
+        classes = list(self.collection.find()) # finding all classes
+        return serialize_items(classes) # converts mongoDB objects to string so we can return as json
+
     def book_class(self, username: str, class_id: str, user_id: str | None = None) -> str:
         try:
             class_oid = ObjectId(class_id)
