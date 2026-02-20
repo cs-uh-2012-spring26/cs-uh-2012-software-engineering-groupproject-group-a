@@ -144,12 +144,23 @@ class ClassBooking(Resource):
         current_user = get_jwt_identity()
         claims = get_jwt()
         user_role = claims.get("role")
-
+        
+        # autherize
         if user_role not in {"trainer", "member"}:
             return {MSG: "Only trainers and members allowed"}, HTTPStatus.FORBIDDEN
 
+        # get user
+        user_resource = UserResource()
+        user = user_resource.get_user(current_user)
+        if not isinstance(user, dict) or not user.get("_id"):
+            return {MSG: "User not found"}, HTTPStatus.NOT_FOUND
+
+
+        user_id = user.get("_id")
+
         class_resource = ClassResource()
-        booking_status = class_resource.book_class(current_user, class_id)
+        # save username in member_list, but use user_id for trainer ownership check
+        booking_status = class_resource.book_class(current_user, class_id, user_id)
 
         if booking_status == "booked":
             return {MSG: "Class booked successfully"}, HTTPStatus.OK
@@ -157,6 +168,8 @@ class ClassBooking(Resource):
             return {MSG: "Invalid class id"}, HTTPStatus.UNPROCESSABLE_ENTITY
         if booking_status == "class_not_found":
             return {MSG: "Class not found"}, HTTPStatus.NOT_FOUND
+        if booking_status == "trainer_cannot_book":
+            return {MSG: "Trainer cannot book their own class"}, HTTPStatus.FORBIDDEN
         if booking_status == "already_booked":
             return {MSG: "User already booked this class"}, HTTPStatus.CONFLICT
 

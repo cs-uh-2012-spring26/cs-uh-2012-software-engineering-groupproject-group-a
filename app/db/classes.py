@@ -41,10 +41,7 @@ class ClassResource:
         created = self.collection.find_one({"_id": result.inserted_id})
         return serialize_item(created)
 
-    # def get_class(self, class_id):
-    #     item = self.collection.find_one({"_id": class_id})
-    #     return serialize_item(item)
-    def book_class(self, user_id: str, class_id: str) -> str:
+    def book_class(self, username: str, class_id: str, user_id: str | None = None) -> str:
         try:
             class_oid = ObjectId(class_id)
         except (InvalidId, TypeError):
@@ -52,20 +49,23 @@ class ClassResource:
 
         # look for class
         fitness_class = self.collection.find_one({"_id": class_oid})
-
+        
         if not fitness_class:
             return "class_not_found"
+
+        if user_id is not None and fitness_class.get("trainer_id") == user_id:
+            return "trainer_cannot_book"
 
         # get member list of the class
         member_list = fitness_class.get("member_list", [])
         # conflict
-        if user_id in member_list:
+        if username in member_list:
             return "already_booked"
 
         # if not in list, push to it
         result = self.collection.update_one(
             {"_id": class_oid},
-            {"$push": {"member_list": user_id}},
+            {"$push": {"member_list": username}},
         )
         # check if update worked
         if result.modified_count == 1:
