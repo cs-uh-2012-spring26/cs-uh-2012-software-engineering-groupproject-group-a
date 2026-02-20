@@ -117,6 +117,7 @@ We also asked general questions regarding the roles and the app in general:
 - User role is `member` or `trainer`.
 - The target class exists.
 - User is not already booked in the class.
+- If user is a trainer, they are not the creator of that class.
 
 **Main Success Scenario**
 1. User sends a booking request for a class (`POST /classes/{class_id}/book`).
@@ -135,11 +136,13 @@ We also asked general questions regarding the roles and the app in general:
    1. System returns `409 Conflict`.
 4. Role not allowed
    1. System returns `403 Forbidden`.
-5. Unexpected booking failure
+5. Trainer attempts to book their own class
+   1. System returns `403 Forbidden`.
+6. Unexpected booking failure
    1. System returns `400 Bad Request`.
 
 **Success Guarantee / Postconditions**
-- User id is stored in the class `member_list`.
+- Username is stored in the class `member_list`.
 - Booking is visible in later class/member-list queries.
 - Duplicate booking is not created.
 
