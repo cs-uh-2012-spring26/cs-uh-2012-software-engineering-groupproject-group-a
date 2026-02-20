@@ -36,7 +36,32 @@ create_class_bad_request = api.model("CreateClassBadRequest", {
     MSG: fields.String(example="Failed to create class")
 })
 
+book_class_success = api.model("BookClassSuccess", {
+    MSG: fields.String(example="Class booked successfully")
+})
+
+book_class_invalid_id = api.model("BookClassInvalidId", {
+    MSG: fields.String(example="Invalid class id")
+})
+
+book_class_not_found = api.model("BookClassNotFound", {
+    MSG: fields.String(example="Class not found")
+})
+
+book_class_conflict = api.model("BookClassConflict", {
+    MSG: fields.String(example="User already booked this class")
+})
+
+book_class_forbidden = api.model("BookClassForbidden", {
+    MSG: fields.String(example="Only trainers and members allowed")
+})
+
+book_class_bad_request = api.model("BookClassBadRequest", {
+    MSG: fields.String(example="Failed to book class")
+})
+
 @api.route("/create-class")
+
 class CreateClass(Resource):
     @jwt_required()
     @api.doc(security='Bearer', params={
@@ -97,3 +122,55 @@ class CreateClass(Resource):
             return {MSG: "Class created successfully", "class_id": created.get("_id")}, HTTPStatus.CREATED
 
         return {MSG: "Failed to create class"}, HTTPStatus.BAD_REQUEST
+
+@api.route("/<string:class_id>/book")
+
+class ClassBooking(Resource):
+    @jwt_required()
+    @api.doc(
+        security="Bearer",
+        params={
+            "class_id": "Class ID to book (Mongo ObjectId string)"
+        },
+        description="Book an existing class (members and trainers only)",
+    )
+    @api.response(HTTPStatus.OK, "Class booked", book_class_success)
+    @api.response(HTTPStatus.UNPROCESSABLE_ENTITY, "Invalid class id", book_class_invalid_id)
+    @api.response(HTTPStatus.NOT_FOUND, "Class not found", book_class_not_found)
+    @api.response(HTTPStatus.CONFLICT, "Already booked", book_class_conflict)
+    @api.response(HTTPStatus.FORBIDDEN, "Role not allowed", book_class_forbidden)
+    @api.response(HTTPStatus.BAD_REQUEST, "Booking failed", book_class_bad_request)
+    def post(self, class_id):
+        current_user = get_jwt_identity()
+        claims = get_jwt()
+        user_role = claims.get("role")
+        
+        # autherize
+        if user_role not in {"trainer", "member"}:
+            return {MSG: "Only trainers and members allowed"}, HTTPStatus.FORBIDDEN
+
+        # get user
+        user_resource = UserResource()
+        user = user_resource.get_user(current_user)
+        if not isinstance(user, dict) or not user.get("_id"):
+            return {MSG: "User not found"}, HTTPStatus.NOT_FOUND
+
+
+        user_id = user.get("_id")
+
+        class_resource = ClassResource()
+        # save username in member_list, but use user_id for trainer ownership check
+        booking_status = class_resource.book_class(current_user, class_id, user_id)
+
+        if booking_status == "booked":
+            return {MSG: "Class booked successfully"}, HTTPStatus.OK
+        if booking_status == "invalid_class_id":
+            return {MSG: "Invalid class id"}, HTTPStatus.UNPROCESSABLE_ENTITY
+        if booking_status == "class_not_found":
+            return {MSG: "Class not found"}, HTTPStatus.NOT_FOUND
+        if booking_status == "trainer_cannot_book":
+            return {MSG: "Trainer cannot book their own class"}, HTTPStatus.FORBIDDEN
+        if booking_status == "already_booked":
+            return {MSG: "User already booked this class"}, HTTPStatus.CONFLICT
+
+        return {MSG: "Failed to book class"}, HTTPStatus.BAD_REQUEST
