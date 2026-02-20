@@ -213,9 +213,44 @@ We also clarified the system would have three user types: admin, member, and gue
 - The list may be empty if no users have booked the class.
 - Only the trainer who owns the class can successfully retrieve the member list.
 
-### Feature 5: Log in
+### Extra Features: Authentication and Registering Account
 
 ---
+
+**Use Case Name**: Register Account
+
+**Preconditions**
+
+- User is a guest user who is not authenticated and has not yet made an account.
+
+**Main Success Scenario**
+
+1. User sends registration request (`POST /auth/register`) with `username`, `password`, and `full_name` in JSON body.
+2. System validates that all required fields are strings and non-empty.
+3. System checks that the username does not already exist in the database.
+4. System creates a new user account with the hashed password.
+5. System assigns the default role of `member` to the new user.
+6. System returns `201 Created` with success message `"User registered successfully"`.
+
+**Alternative Flows / Extensions**
+
+1. Missing or invalid field values.
+   1. System returns `406 Not Acceptable` with message `"Invalid value provided for one of the fields"`.
+2. Username already exists.
+   1. System returns `400 Bad Request` with message `"Username already exists"`.
+3. If user provides a valid `trainer_code`, the account role is set to `trainer` instead of the default `member`.
+4. Registration operation fails.
+   1. System returns `400 Bad Request` with message `"Registration failed"`.
+
+**Success Guarantee / Postconditions**
+
+- A new user account exists in the database with a unique username.
+- The password is securely stored as a hashed value.
+- The user is assigned the appropriate role (`member` or `trainer`).
+- The user can log in using their username and password.
+
+
+<!-- ------- -->
 
 **Use Case Name**: User logs in
 
