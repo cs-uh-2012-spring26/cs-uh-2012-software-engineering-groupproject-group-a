@@ -1,12 +1,24 @@
-# Students Records API
+# Fitness Class Management and Booking System API
 
-This repo provides a template for setting up a flask rest API server. As a starting point, it shows an example of a simple hello world endpoint as well as endpoints that offer interactions with student records.
+A REST API which enables users to create, browse, and manage fitness classes of a particular facility, and for guests/members to book spots in them. This system mimics a lightweight version of fitness studio management systems like Fitune or FitBudd, focusing on core backend functionality and its evolution over time, while working on simplified frontend.
 
 ## Prerequisites
 
 - python 3.10 or higher
 - MongoDB installed. Follow [https://www.mongodb.com/docs/manual/installation/](https://www.mongodb.com/docs/manual/installation/)
   to install MongoDB locally. Select the right link for your operating system.
+
+## Important Note: Authentication for Protected Endpoints
+
+In order to ensure that you are able to test the protected API endpoints (such as booking a class or viewing a class list as a trainer) please do the following:
+
+1. Use the `auth/register` endpoint to create an account.
+    1. Use `"trainer_code": "IAMATRAINER"` for creating a trainer account, otherwise role will be member.
+2. After registration, use the `auth/login` endpoint to login (this will provide you with an authentication token)
+    1. **IMPORTANT**: Make sure to copy the token from `"access_token": "hjX02ksdkKkjqD..."` in the JSON response.
+3. Finally, SwaggerUI provides an "Authorize" button at the top of the page. Click this:
+    1. For the token value field, write `Bearer <token>`, replacing `<token>` with the copied string you recieved from the login endpoint. Make sure to include a space between Bearer and the token.
+    1. Hit Authorize and you will now be "logged in" and authenticated + authorized for the protected routes.
 
 ## Tech Stack
 
@@ -47,42 +59,6 @@ Find the equivalent for your OS)
 
 1. Run `make run_local_server` to run the server. This will also run the tests first.
 2. Run `make run_server` to run the server without runings the tests.
-2. Go to [http://127.0.0.1:8000](http://127.0.0.1:8000) to see it running!
+3. Go to [http://127.0.0.1:8000](http://127.0.0.1:8000) to see it running!
 
 You can use `ctrl-c` to stop the server.
-
-### Testing the API server
-
-Run `make tests` to execute the test suite and see the coverage report
-in your terminal. You can also see a visual report by viewing
-[/htmlcov/index.html](/htmlcov/index.html) in your browser.
-
-### Manually activating and deactivating the virtual environment
-
-Manually activating and deactivating the virtual environment is useful for
-debugging issues and running specific scripts with flexibility (e.g., you can
-run `FLASK_APP=app flask run --debug --host=0.0.0.0 --port 8000`
-inside the virtual environment to directly start
-the server without running tests first).
-
-To activate the virtual environment manually:
-
-```sh
-source .venv/bin/activate
-```
-
-Alternatively, you can use:
-
-```sh
-. .venv/bin/activate
-```
-
-To deactivate the virtual environment:
-
-```sh
-deactivate
-```
-
-## Best Practices
-
-See [/docs/BestPractices.md](/docs/BestPractices.md) for advice regarding branch naming and other useful tips.
