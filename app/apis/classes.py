@@ -36,8 +36,6 @@ create_class_bad_request = api.model("CreateClassBadRequest", {
     MSG: fields.String(example="Failed to create class")
 })
 
-
-##
 book_class_success = api.model("BookClassSuccess", {
     MSG: fields.String(example="Class booked successfully")
 })
@@ -131,7 +129,10 @@ class ClassBooking(Resource):
     @jwt_required()
     @api.doc(
         security="Bearer",
-        description="Book a class (members and trainers only)",
+        params={
+            "class_id": "Class ID to book (Mongo ObjectId string)"
+        },
+        description="Book an existing class (members and trainers only)",
     )
     @api.response(HTTPStatus.OK, "Class booked", book_class_success)
     @api.response(HTTPStatus.UNPROCESSABLE_ENTITY, "Invalid class id", book_class_invalid_id)
