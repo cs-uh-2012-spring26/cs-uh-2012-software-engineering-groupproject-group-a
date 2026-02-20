@@ -205,3 +205,16 @@ We also asked general questions regarding the roles and the app in general:
 - The returned `members` list accurately reflects the stored `member_list` in the database.
 - The list may be empty if no users have booked the class.
 - Only the trainer who owns the class can successfully retrieve the member list.
+
+
+## REFLECTION
+
+### (2) Important clarifications gained through the meeting
+
+A feature we were initially unsure about was the extent of permissions or roles that trainers and admins can use within the system. To clarify this, we asked several targeted questions during our client meeting, such as:
+- Can a trainer kick or ban a member from the system?
+- Can a user see other users who booked a class, or is this information limited to the trainer?
+- Can a trainer view members of every class, or only the classes they have created?
+These questions helped us better understand the responsibilities and limitations of each actor, which directly informed our backend implementation. For example, in our fitness class model, we included the trainer_id for each class. This ensures that when a trainer tries to view the members of a class, their ID must match the ID stored in the class, enforcing proper access control.
+
+We also clarified the system would have three user types: admin, member, and guest. A guest can only view a list of available fitness classes but cannot book any classes. Members and trainers have additional permissions: members can book classes, while trainers can create classes and view the members of the classes they own. This distinction allowed us to define role-based access throughout our API and avoid unauthorized actions.
