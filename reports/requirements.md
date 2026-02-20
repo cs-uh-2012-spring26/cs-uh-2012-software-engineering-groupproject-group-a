@@ -109,26 +109,42 @@ We also asked general questions regarding the roles and the app in general:
 
 ---
 
-**Use Case Name**: use case name
+**Use Case Name**: Book Fitness Class
 
 **Preconditions**
 
-- points
+- User is authenticated (valid JWT token).
+- User role is `member` or `trainer`.
+- The target class exists.
+- User is not already booked in the class.
+- If user is a trainer, they are not the creator of that class.
 
 **Main Success Scenario**
-
-1. points
+1. User sends a booking request for a class (`POST /classes/{class_id}/book`).
+2. System validates authentication token.
+3. System validates that role is allowed (`member` or `trainer`).
+4. System validates class id format and confirms class exists.
+5. System adds the user to the class member list.
+6. System returns success message.
 
 **Alternative Flows / Extensions**
-
-1. point
-   1. point
-2. point
-   1. point
+1. Invalid class id format
+   1. System returns `422 Unprocessable Entity` with message "Invalid class id".
+2. Class not found
+   1. System returns `404 Not Found`.
+3. User already booked this class
+   1. System returns `409 Conflict`.
+4. Role not allowed
+   1. System returns `403 Forbidden`.
+5. Trainer attempts to book their own class
+   1. System returns `403 Forbidden`.
+6. Unexpected booking failure
+   1. System returns `400 Bad Request`.
 
 **Success Guarantee / Postconditions**
-
-- points
+- Username is stored in the class `member_list`.
+- Booking is visible in later class/member-list queries.
+- Duplicate booking is not created.
 
 ### Feature 4: View Member/Guest List of a class
 
