@@ -43,9 +43,17 @@ We also asked general questions regarding the roles and the app in general:
 
 Overall, our primary semi-structured interview technique worked very well, providing us with all the details and insights needed to successfully implement and break down the 4 required features into their respective use cases. Since this was the first meeting with the client, it was important to get a general understanding of the implementation needed, and these elicitation techniques allowed us to ask our main guiding questions, follow-up questions, and so on together as a group. Since we have the foundational implementation complete, we might adjust our techniques to better reflect the needs of subsequent sprints. For example, if the next sprint will focus on more technical and complex additions or adjustments, we might provide concrete examples for implementation or use a comparative approach to clarify.
 
-### Example of Important Clarifications Gained
 
-TODO: write out the clarifications gained.
+
+### (2) Important clarifications gained through the meeting
+
+A feature we were initially unsure about was the extent of permissions or roles that trainers and admins can use within the system. To clarify this, we asked several targeted questions during our client meeting, such as:
+- Can a trainer kick or ban a member from the system?
+- Can a user see other users who booked a class, or is this information limited to the trainer?
+- Can a trainer view members of every class, or only the classes they have created?
+These questions helped us better understand the responsibilities and limitations of each actor, which directly informed our backend implementation. For example, in our fitness class model, we included the trainer_id for each class. This ensures that when a trainer tries to view the members of a class, their ID must match the ID stored in the class, enforcing proper access control.
+
+We also clarified the system would have three user types: admin, member, and guest. A guest can only view a list of available fitness classes but cannot book any classes. Members and trainers have additional permissions: members can book classes, while trainers can create classes and view the members of the classes they own. This distinction allowed us to define role-based access throughout our API and avoid unauthorized actions.
 
 # Requirements Specification
 
@@ -206,15 +214,3 @@ TODO: write out the clarifications gained.
 - The list may be empty if no users have booked the class.
 - Only the trainer who owns the class can successfully retrieve the member list.
 
-
-## REFLECTION
-
-### (2) Important clarifications gained through the meeting
-
-A feature we were initially unsure about was the extent of permissions or roles that trainers and admins can use within the system. To clarify this, we asked several targeted questions during our client meeting, such as:
-- Can a trainer kick or ban a member from the system?
-- Can a user see other users who booked a class, or is this information limited to the trainer?
-- Can a trainer view members of every class, or only the classes they have created?
-These questions helped us better understand the responsibilities and limitations of each actor, which directly informed our backend implementation. For example, in our fitness class model, we included the trainer_id for each class. This ensures that when a trainer tries to view the members of a class, their ID must match the ID stored in the class, enforcing proper access control.
-
-We also clarified the system would have three user types: admin, member, and guest. A guest can only view a list of available fitness classes but cannot book any classes. Members and trainers have additional permissions: members can book classes, while trainers can create classes and view the members of the classes they own. This distinction allowed us to define role-based access throughout our API and avoid unauthorized actions.
