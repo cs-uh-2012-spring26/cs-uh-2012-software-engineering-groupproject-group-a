@@ -1,5 +1,7 @@
 from app.db.utils import serialize_item, serialize_items
 from app.db import DB
+from bson import ObjectId
+from bson.errors import InvalidId
 
 CLASS_COLLECTION = "classes"
 
@@ -42,3 +44,30 @@ class ClassResource:
     # def get_class(self, class_id):
     #     item = self.collection.find_one({"_id": class_id})
     #     return serialize_item(item)
+    def book_class(self, user_id: str, class_id: str) -> str:
+        try:
+            class_oid = ObjectId(class_id)
+        except (InvalidId, TypeError):
+            return "invalid_class_id"
+
+        # look for class
+        fitness_class = self.collection.find_one({"_id": class_oid})
+
+        if not fitness_class:
+            return "class_not_found"
+
+        # get member list of the class
+        member_list = fitness_class.get("member_list", [])
+        # conflict
+        if user_id in member_list:
+            return "already_booked"
+
+        # if not in list, push to it
+        result = self.collection.update_one(
+            {"_id": class_oid},
+            {"$push": {"member_list": user_id}},
+        )
+        # check if update worked
+        if result.modified_count == 1:
+            return "booked"
+        return "booking_failed"
