@@ -10,22 +10,6 @@ class ClassResource:
     def __init__(self):
         self.collection = DB.get_collection(CLASS_COLLECTION)
 
-    # TODO: 
-    #   - method for adding class
-    #   - method for adding user to class
-    #   - method for viewing all users in a particular class
-    #   - etc...
-
-# Class Model:
-    # _id 
-    # class_name
-    # member_list
-    # trainer_id
-    # capacity
-    # start_date
-    # end_date
-    # location
-
     def create_class(self, class_name: str, start_date: str, end_date: str, location: str, capacity: int, trainer_id: str):
         class_data = {
             "class_name": class_name,
