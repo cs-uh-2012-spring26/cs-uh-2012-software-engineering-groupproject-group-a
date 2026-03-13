@@ -10,8 +10,8 @@ endif
 
 # Common variables
 PYTHONFILES = $(shell ls *.py 2>/dev/null || dir /B *.py)
-PYTESTFLAGS = -vv --verbose --cov-config=.coveragerc --cov=app tests/
-TEST_CMD = pytest $(PYTESTFLAGS) --cov=$(PKG) && coverage html;
+PYTESTFLAGS = -vv --verbose --rootdir=. --cov-config=.coveragerc --cov=app app/tests/
+TEST_CMD = PYTHONPATH=. pytest $(PYTESTFLAGS) && coverage html;
 
 # Our directories
 API_DIR = app
@@ -21,8 +21,10 @@ VENV_DIR = .venv
 # Platform-specific variables
 ifeq ($(OS), Windows_NT)
     ACTIVATE = . $(VENV_DIR)/Scripts/activate
+	VENV_PYTHON = $(VENV_DIR)/Scripts/python
 else
     ACTIVATE = . $(VENV_DIR)/bin/activate
+	VENV_PYTHON = $(VENV_DIR)/bin/python
 endif
 
 # If python is not found, use python3 to create venv
@@ -43,9 +45,8 @@ tests: pytests
 dev_env:
 	if [ ! -d $(VENV_DIR) ]; then \
 		$(PYTHON_CREATE) -m venv $(VENV_DIR); \
-		pip install -r $(REQ_DIR)/requirements-dev.txt; \
-	fi; \
-	$(ACTIVATE)
+	fi
+	$(VENV_PYTHON) -m pip install -r $(REQ_DIR)/requirements-dev.txt
 
 pytests: dev_env
 	$(ACTIVATE) && $(TEST_CMD)
