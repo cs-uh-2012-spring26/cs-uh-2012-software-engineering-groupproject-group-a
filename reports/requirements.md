@@ -43,15 +43,14 @@ We also asked general questions regarding the roles and the app in general:
 
 Overall, our primary semi-structured interview technique worked very well, providing us with all the details and insights needed to successfully implement and break down the 4 required features into their respective use cases. Since this was the first meeting with the client, it was important to get a general understanding of the implementation needed, and these elicitation techniques allowed us to ask our main guiding questions, follow-up questions, and so on together as a group. Since we have the foundational implementation complete, we might adjust our techniques to better reflect the needs of subsequent sprints. For example, if the next sprint will focus on more technical and complex additions or adjustments, we might provide concrete examples for implementation or use a comparative approach to clarify.
 
-
-
 ### (2) Important clarifications gained through the meeting
 
 A feature we were initially unsure about was the extent of permissions or roles that trainers and admins can use within the system. To clarify this, we asked several targeted questions during our client meeting, such as:
+
 - Can a trainer kick or ban a member from the system?
 - Can a user see other users who booked a class, or is this information limited to the trainer?
 - Can a trainer view members of every class, or only the classes they have created?
-These questions helped us better understand the responsibilities and limitations of each actor, which directly informed our backend implementation. For example, in our fitness class model, we included the trainer_id for each class. This ensures that when a trainer tries to view the members of a class, their ID must match the ID stored in the class, enforcing proper access control.
+  These questions helped us better understand the responsibilities and limitations of each actor, which directly informed our backend implementation. For example, in our fitness class model, we included the trainer_id for each class. This ensures that when a trainer tries to view the members of a class, their ID must match the ID stored in the class, enforcing proper access control.
 
 We also clarified the system would have three user types: admin, member, and guest. A guest can only view a list of available fitness classes but cannot book any classes. Members and trainers have additional permissions: members can book classes, while trainers can create classes and view the members of the classes they own. This distinction allowed us to define role-based access throughout our API and avoid unauthorized actions.
 
@@ -213,6 +212,60 @@ We also clarified the system would have three user types: admin, member, and gue
 - The list may be empty if no users have booked the class.
 - Only the trainer who owns the class can successfully retrieve the member list.
 
+### Feature 5: Send Reminder Emails to Members Signed Up for a Class
+
+---
+
+**Use Case Name**: Send reminder emails for a class
+
+**Preconditions**
+
+- User role is `trainer`.
+- The target `class_id` is valid.
+- The requesting trainer is the owner of the class (`class.trainer_id` matches the requesting trainer’s `_id`).
+
+**Main Success Scenario**
+
+1. Trainer sends a reminder request  
+   (`POST /remind/{class_id}`).
+2. System validates authentication token.
+3. System validates that the user role is `trainer`.
+4. System validates the `class_id` format.
+5. System retrieves the class from the database.
+6. System verifies that the class belongs to the requesting trainer.
+7. System retrieves the `member_list` for the class.
+8. System retrieves the email addresses of all booked members in that class.
+9. System generates a reminder email containing the class details, such as class name, start date, end date, and location.
+10. System sends the reminder email to all members in the class using email service.
+11. System returns `200 OK` with a success message confirming that reminders were sent.
+
+**Alternative Flows / Extensions**
+
+1. Invalid class id format
+   1. System returns `422 Unprocessable Entity` with message `"Invalid class id"`.
+
+2. Class not found
+   1. System returns `404 Not Found` with message `"Class not found"`.
+
+3. Role not allowed
+   1. System returns `403 Forbidden` with message `"Only trainers allowed"`.
+
+4. Trainer does not own this class
+   1. System returns `403 Forbidden` with message `"Only the trainer of this class can send reminders for it"`.
+
+5. No members are booked in the class
+   1. System returns `200 OK` with message such as `"No reminder emails sent because no members are booked in this class"`.
+
+6. Email service fails while sending
+   1. System returns `400 Bad Request` with message `"Failed to send reminder emails"`.
+
+**Success Guarantee / Postconditions**
+
+- Reminder emails are sent to all valid email addresses of members booked in the selected class.
+- No class data or booking data is modified by this operation.
+- Only the trainer who owns the class can successfully trigger reminder emails.
+- The system returns a result indicating whether the reminder operation succeeded, partially succeeded, or failed.
+
 ### Extra Features: Authentication and Registering Account
 
 ---
@@ -248,7 +301,6 @@ We also clarified the system would have three user types: admin, member, and gue
 - The password is securely stored as a hashed value.
 - The user is assigned the appropriate role (`member` or `trainer`).
 - The user can log in using their username and password.
-
 
 <!-- ------- -->
 
