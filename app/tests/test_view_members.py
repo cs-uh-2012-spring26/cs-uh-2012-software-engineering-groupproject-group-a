@@ -1,7 +1,5 @@
 # Viesturs
 
-import pytest
-
 # input explained
 # client - makes POST, GET, etc http request to API
 # trainer_headers - adds authentication to requests so API knows this is trainer
@@ -31,3 +29,33 @@ def test_unauthorized_user_cannot_view_members(client, seeded_class):
 def test_view_nonexistent_class_members(client, trainer_headers):
     response = client.get("/classes/000000000000000000000000/members", headers = trainer_headers)
     assert response.status_code == 404 # this should return 404 as class does not exist
+    
+def test_view_class_members_invalid_class_id_returns_422(client, trainer_headers):
+    response = client.get("/classes/invalid_id/members", headers = trainer_headers)
+    assert response.status_code == 422
+    assert response.get_json()["message"] == "Invalid class id"
+    
+def test_trainer_cannot_view_another_trainers_class_members(client, app, seeded_class):
+    from app.db.users import UserResource
+    from flask_jwt_extended import create_access_token
+    
+    with app.app_context(): # create another trainer user
+        users = UserResource()
+        users.create_user(
+            full_name = "Other Trainer",
+            username = "other_trainer",
+            password = "password123",
+            trainer_code = "IAMTRAINER")
+        token = create_access_token(
+            identity="other_trainer",
+            additional_claims = {"role": "trainer", "full_name": "Other Trainer"},
+        )
+    
+    other_trainer_headers = {"Authorization": f"Bearer {token}"}
+    
+    response = client.get(
+        f"/classes/{seeded_class['_id']}/members",
+        headers = other_trainer_headers,
+    )
+    assert response.status_code == 403
+    assert response.get_json()["message"] == "Only the trainer of this class can view its members"
