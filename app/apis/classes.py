@@ -5,6 +5,7 @@ from http import HTTPStatus
 from app.apis import MSG
 from app.db.users import UserResource
 from app.db.classes import ClassResource
+from app.services.email_service import EmailService
 
 api = Namespace(
     "classes", description="API endpoints for class viewing and creation"
@@ -58,6 +59,25 @@ book_class_forbidden = api.model("BookClassForbidden", {
 
 book_class_bad_request = api.model("BookClassBadRequest", {
     MSG: fields.String(example="Failed to book class")
+})
+
+remind_class_success = api.model("RemindClassSuccess", {
+    MSG: fields.String(example="Reminder process completed"),
+    "sent": fields.Integer(example=8),
+    "failed": fields.Integer(example=2),
+    "errors": fields.List(fields.String, description="Send failure details", required=False),
+})
+
+remind_class_invalid_id = api.model("RemindClassInvalidId", {
+    MSG: fields.String(example="Invalid class id")
+})
+
+remind_class_not_found = api.model("RemindClassNotFound", {
+    MSG: fields.String(example="Class not found")
+})
+
+remind_class_forbidden = api.model("RemindClassForbidden", {
+    MSG: fields.String(example="Only the trainer of this class can send reminders")
 })
 
 # documented response schema for swagger
@@ -256,3 +276,78 @@ class ClassMembers(Resource):
             return {MSG: "Only the trainer of this class can view its members"}, HTTPStatus.FORBIDDEN
 
         return {"members": result}, HTTPStatus.OK # otherwise return result, all went well
+
+
+@api.route("/remind/<string:class_id>")
+class ClassReminder(Resource):
+    @jwt_required()
+    @api.doc(
+        security="Bearer",
+        params={"class_id": "Class ID (Mongo ObjectId string)"},
+        description="Send reminder emails to members of a class (only the class trainer)",
+    )
+    @api.response(HTTPStatus.OK, "Reminder process completed", remind_class_success)
+    @api.response(HTTPStatus.UNPROCESSABLE_ENTITY, "Invalid class id", remind_class_invalid_id)
+    @api.response(HTTPStatus.NOT_FOUND, "Class not found", remind_class_not_found)
+    @api.response(HTTPStatus.FORBIDDEN, "Role not allowed", remind_class_forbidden)
+    def post(self, class_id):
+        claims = get_jwt()
+        user_role = claims.get("role")
+        if user_role != "trainer":
+            return {MSG: "Only trainers allowed"}, HTTPStatus.FORBIDDEN
+
+        current_user = get_jwt_identity()
+        user_resource = UserResource()
+        user = user_resource.get_user(current_user)
+        trainer_id = user.get("_id") if isinstance(user, dict) and user.get("_id") else None
+
+        class_resource = ClassResource()
+        members = class_resource.get_class_members(class_id, trainer_id)
+
+        if members == "invalid_class_id":
+            return {MSG: "Invalid class id"}, HTTPStatus.UNPROCESSABLE_ENTITY
+        if members == "class_not_found":
+            return {MSG: "Class not found"}, HTTPStatus.NOT_FOUND
+        if members == "not_your_class":
+            return {MSG: "Only the trainer of this class can send reminders"}, HTTPStatus.FORBIDDEN
+
+        class_info = class_resource.get_class_by_id(class_id)
+        class_name_raw = class_info.get("class_name") if isinstance(class_info, dict) else None
+        class_name = class_name_raw if isinstance(class_name_raw, str) and len(class_name_raw) > 0 else "your upcoming class"
+
+        sent = 0
+        failed = 0
+        errors = []
+        for member in members:
+            member_user = user_resource.get_user(member)
+            member_email = member_user.get("email") if isinstance(member_user, dict) else None
+
+            if not isinstance(member_email, str) or len(member_email.strip()) == 0:
+                failed += 1
+                errors.append(f"{member}: missing email")
+                continue
+
+            success, error = EmailService.send_class_reminder(member_email, class_name)
+            if success:
+                sent += 1
+            else:
+                failed += 1
+                if isinstance(error, str) and len(error) > 0:
+                    errors.append(f"{member_email}: {error}")
+
+        message = (
+            f"All {sent} reminder emails sent successfully"
+            if failed == 0
+            else "Reminder process completed with some failed emails"
+        )
+
+        response_payload = {
+            MSG: message,
+            "sent": sent,
+            "failed": failed,
+        }
+
+        if len(errors) > 0:
+            response_payload["errors"] = errors
+
+        return response_payload, HTTPStatus.OK

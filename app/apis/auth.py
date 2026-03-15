@@ -4,7 +4,6 @@ from flask_jwt_extended import create_access_token
 import datetime
 from http import HTTPStatus
 from app.apis import MSG
-from app.apis import MSG
 from app.db.users import UserResource
 
 api = Namespace(
@@ -15,6 +14,7 @@ api = Namespace(
 register_model = api.model("Register", {
     "full_name": fields.String(required=True, description="Full name", example="John Doe"),
     "username": fields.String(required=True, description="Username", example="john_doe"),
+    "email": fields.String(required=True, description="Email", example="john_doe@example.com"),
     "password": fields.String(required=True, description="Password", example="securepass123"),
     "trainer_code": fields.String(required=False, description="Trainer Code", example="TCODE123")
 })
@@ -45,6 +45,7 @@ class Register(Resource):
             params={
                 "full_name": "Name for user, not unique",
                 "username": "Unique username per user",
+                "email": "Unique email for user account",
                 "password": "User password for registration to be hashed",
                 "trainer_code": "(Optional) Trainer Code"
             },
@@ -67,6 +68,7 @@ class Register(Resource):
         # collect fields and validate
         assert isinstance(request.json, dict)
         username = request.json.get("username")
+        email = request.json.get("email")
         password = request.json.get("password")
         full_name = request.json.get("full_name")
         trainer_code = request.json.get("trainer_code")
@@ -74,6 +76,8 @@ class Register(Resource):
         if not (
             isinstance(username, str)
             and len(username) > 0
+            and isinstance(email, str)
+            and len(email) > 0
             and isinstance(password, str)
             and len(password) > 0
             and isinstance(full_name, str)
@@ -91,9 +95,14 @@ class Register(Resource):
         existing_user = user_resource.get_user(username)
         if existing_user:
             return {MSG: "Username already exists"}, HTTPStatus.BAD_REQUEST
+
+        existing_email = user_resource.get_user_by_email(email)
+        if existing_email:
+            return {MSG: "Email already exists"}, HTTPStatus.BAD_REQUEST
         
         success = user_resource.create_user(
             username=username,
+            email=email,
             password=password,
             full_name=full_name,
             trainer_code= trainer_code if trainer_code else None

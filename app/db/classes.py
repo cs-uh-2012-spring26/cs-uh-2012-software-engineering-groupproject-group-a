@@ -28,6 +28,18 @@ class ClassResource:
     def get_all_classes(self):
         classes = list(self.collection.find()) # finding all classes
         return serialize_items(classes) # converts mongoDB objects to string so we can return as json
+
+    def get_class_by_id(self, class_id: str):
+        try:
+            class_oid = ObjectId(class_id)
+        except (InvalidId, TypeError):
+            return "invalid_class_id"
+
+        fitness_class = self.collection.find_one({"_id": class_oid})
+        if not fitness_class:
+            return "class_not_found"
+
+        return serialize_item(fitness_class)
       
     def get_class_members(self, class_id: str, requesting_trainer_id: str | None = None): # get members of some specific class
         try:

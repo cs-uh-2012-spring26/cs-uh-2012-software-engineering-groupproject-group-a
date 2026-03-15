@@ -61,6 +61,7 @@ def seeded_trainer(app):
         resource.create_user(
             full_name="Test Trainer",
             username="test_trainer",
+            email="test_trainer@example.com",
             password="password123",
             trainer_code="IAMATRAINER",
         )
@@ -75,6 +76,7 @@ def seeded_member(app):
         resource.create_user(
             full_name="Test Member",
             username="test_member",
+            email="test_member@example.com",
             password="password123",
         )
         return resource.get_user("test_member")
