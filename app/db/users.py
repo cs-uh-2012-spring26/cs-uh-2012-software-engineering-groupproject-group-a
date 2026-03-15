@@ -7,6 +7,7 @@ USER_COLLECTION = "users"
 
 FULL_NAME = "full_name"
 USERNAME = "username"
+EMAIL = "email"
 PASSWORD_HASH = "password_hash"
 ROLE = "role"
 
@@ -18,10 +19,17 @@ class UserResource:
     def get_user(self, username: str):
         user = self.collection.find_one({USERNAME: username})
         return serialize_item(user)
+
+    def get_user_by_email(self, email: str):
+        user = self.collection.find_one({EMAIL: email})
+        return serialize_item(user)
     
-    def create_user(self, full_name: str, username: str, password: str, trainer_code: str | None = None):
+    def create_user(self, full_name: str, username: str, email: str, password: str, trainer_code: str | None = None):
         existing_user = self.get_user(username)
         if existing_user:
+            return -1
+        existing_email = self.get_user_by_email(email)
+        if existing_email:
             return -1
         
         # hash password and check trainer code
@@ -30,6 +38,7 @@ class UserResource:
         user_data = {
             FULL_NAME: full_name,
             USERNAME: username,
+            EMAIL: email,
             ROLE: "trainer" if trainer_code in TRAINERCODES else "member",
             "password_hash": password_hash
         }
@@ -48,6 +57,7 @@ class UserResource:
 # User Model
     # _id 
     # username
+    # email
     # full_name
     # role 
     # password_hash

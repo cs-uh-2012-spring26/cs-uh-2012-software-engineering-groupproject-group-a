@@ -44,6 +44,7 @@ def test_trainer_cannot_view_another_trainers_class_members(client, app, seeded_
         users.create_user(
             full_name = "Other Trainer",
             username = "other_trainer",
+            email = "other_trainer@example.com",
             password = "password123",
             trainer_code = "IAMTRAINER")
         token = create_access_token(
