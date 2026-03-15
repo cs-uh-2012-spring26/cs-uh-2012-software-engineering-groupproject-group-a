@@ -1,13 +1,17 @@
+import os
+
 import pytest
 from dotenv import load_dotenv
 from flask_jwt_extended import create_access_token
-from app import create_app
-from app.db import DB
+
 
 @pytest.fixture(scope="session", autouse=True)
 def app():
-    load_dotenv()
+    os.environ["MOCK_DB"] = "true"
+    from app import create_app      # we import here so it sets the mock_db env before import
     app = create_app()
+    from app.db import DB           # We import after "os.environ["MOCK_DB"]='true'" so it doesnt not set mock_db to false 
+    assert "mongomock" in type(DB._get().client).__module__ # checks if were using mock
     yield app
 
 
@@ -17,6 +21,7 @@ def client(app):
 
 @pytest.fixture(autouse=True)
 def clear_db(app):
+    from app.db import DB
 
     # drop all test collection before each test so tests are fully isolated
     # runs automatically for every test
