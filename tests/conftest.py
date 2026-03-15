@@ -52,6 +52,11 @@ def trainer_headers(app):
 def member_headers(app):
     return _make_auth_headers(app, username="test_member", role="member", full_name="Test Member")
 
+
+@pytest.fixture()
+def invalid_role_headers(app):
+    return _make_auth_headers(app, username="test_guest", role="guest", full_name="Test Guest")
+
 # trainer for testing
 @pytest.fixture()
 def seeded_trainer(app):
