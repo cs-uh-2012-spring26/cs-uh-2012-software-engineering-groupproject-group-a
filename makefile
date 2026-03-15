@@ -10,7 +10,7 @@ endif
 
 # Common variables
 PYTHONFILES = $(shell ls *.py 2>/dev/null || dir /B *.py)
-PYTESTFLAGS = -vv --verbose --rootdir=. --cov-config=.coveragerc --cov=app app/tests/
+PYTESTFLAGS = -vv --verbose --rootdir=. --cov-config=.coveragerc --cov=app tests/
 TEST_CMD = PYTHONPATH=. pytest $(PYTESTFLAGS) && coverage html;
 
 # Our directories
