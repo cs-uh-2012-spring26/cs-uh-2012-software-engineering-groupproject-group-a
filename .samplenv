@@ -9,3 +9,7 @@ JWT_SECRET_KEY="78b798637dd44b7042ebbf339a887669a2e8a0d055da6fde1e7c68fcda3c8ac8
 
 # server config
 DEBUG="true"
+
+# email config
+SENDGRID_API_KEY="your-sendgrid-api-key"
+SENDGRID_FROM_EMAIL="verified-sender@example.com"
