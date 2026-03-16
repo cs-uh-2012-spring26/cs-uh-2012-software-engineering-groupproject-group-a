@@ -26,12 +26,8 @@ class UserResource:
     
     def create_user(self, full_name: str, username: str, email: str, password: str, trainer_code: str | None = None):
         existing_user = self.get_user(username)
-        if existing_user:
-            return -1
         existing_email = self.get_user_by_email(email)
-        if existing_email:
-            return -1
-        
+
         # hash password and check trainer code
         password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
