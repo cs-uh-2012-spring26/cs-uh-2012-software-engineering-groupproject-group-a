@@ -34,4 +34,4 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest --cov=app --cov-report=term-missing
+          PYTHONPATH=. pytest --cov=app --cov-report=term-missing
