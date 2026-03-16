@@ -68,7 +68,7 @@ def test_remind_class_wrong_trainer(mock_get_members, mock_get_user, client, tra
 def test_remind_class_success(mock_get_user, mock_get_members, mock_get_class_by_id, mock_send_email, client, trainer_headers):
     mock_get_user.side_effect = user_side_effect_helper # access mock object side effect
     
-    mock_get_members.return_value = ["member_1", "member_2"] # 2 members in mock class
+    mock_get_members.return_value = ["member_1", "member_2"]
     mock_get_class_by_id.return_value = {"class_name": "Yoga"}
     mock_send_email.return_value = (True, None) # simulate email sent out successfully
     
@@ -84,14 +84,14 @@ def test_remind_class_success(mock_get_user, mock_get_members, mock_get_class_by
 def test_remind_class_missing_user_emails(mock_get_user, mock_get_members, mock_get_class_by_id, mock_send_email, client, trainer_headers):
     mock_get_user.side_effect = user_side_effect_helper
     
-    mock_get_members.return_value = ["missing_email_user", "failing_email_user"] # 2 mems in our class
+    mock_get_members.return_value = ["missing_email_user", "failing_email_user"]
     mock_get_class_by_id.return_value = {"class_name": "Test Class"}
     mock_send_email.return_value = (False, "Simulated SendGrid timeout") # did not send out successfully
     
     response = client.post("/classes/remind/valid_id_here", headers = trainer_headers)
     
     assert response.status_code == HTTPStatus.OK
-    assert response.json["failed"] == 2 # 2 failed emails
+    assert response.json["failed"] == 2
     
 @patch(MOCK_SEND_CLASS_REMINDER)
 @patch(MOCK_GET_CLASS_BY_ID)
@@ -100,7 +100,7 @@ def test_remind_class_missing_user_emails(mock_get_user, mock_get_members, mock_
 def test_remind_class_does_not_have_name(mock_get_user, mock_get_members, mock_get_class_by_id, mock_send_email, client, trainer_headers):
     # test branch where class does not have a name and falls back
     mock_get_user.return_value = {"_id": "m1", "email": "m1@test.com"} # this is our singular user
-    mock_get_members.return_value = ["member_1"] # we simulate class with 1 member
+    mock_get_members.return_value = ["member_1"]
     
     mock_get_class_by_id.return_value = {} # we force an empty dictionary, which means that the class does not have a name
     mock_send_email.return_value = (True, None) # we force email sender to succesfully report sent out email
