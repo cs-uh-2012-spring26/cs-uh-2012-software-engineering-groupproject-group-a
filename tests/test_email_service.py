@@ -71,6 +71,7 @@ def test_send_class_reminder_sendgrid_error(mock_build_message, mock_get_client)
     
     success, error = EmailService.send_class_reminder("test@test.com", "Yoga")
     assert success is False
+    assert error is not None
     assert "SendGrid returned status 401: Unauthorized" in error
     
 @patch("app.services.email_service.EmailService._get_sendgrid_client")
@@ -80,4 +81,5 @@ def test_send_class_reminder_exception(mock_get_client): #testing unexpected exc
     success, error = EmailService.send_class_reminder("test@test.com", "Yoga")
     
     assert success is False
+    assert error is not None
     assert "Network timeout" in error

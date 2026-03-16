@@ -1,8 +1,3 @@
-from app.config import Config
-from app.apis.auth import api as auth_ns
-from app.apis.classes import api as classes_ns
-from app.db import DB
-
 from http import HTTPStatus
 from flask import Flask
 from flask_restx import Api
@@ -11,6 +6,11 @@ from flask_jwt_extended.exceptions import NoAuthorizationError, InvalidHeaderErr
 from jwt.exceptions import ExpiredSignatureError, DecodeError, InvalidTokenError
 
 def create_app():
+    from app.config import Config
+    from app.apis.auth import api as auth_ns
+    from app.apis.classes import api as classes_ns
+    from app.db import DB
+
     app = Flask(__name__)
     app.config.from_object(Config)
 
