@@ -155,7 +155,9 @@ We also clarified the system would have three user types: admin, member, and gue
    1. System returns `403 Forbidden`.
 5. Trainer attempts to book their own class
    1. System returns `403 Forbidden`.
-6. Unexpected booking failure
+6. Class is full.
+   1. System returns `403 Forbidden`.
+7. Unexpected booking failure
    1. System returns `400 Bad Request`.
 
 **Success Guarantee / Postconditions**
