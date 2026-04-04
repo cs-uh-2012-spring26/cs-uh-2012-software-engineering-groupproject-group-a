@@ -1,17 +1,28 @@
 import pytest
+import datetime
+
+#calculate a future date for testing (30 days from now)
+future_start = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=30)).strftime("%Y-%m-%dT09:00:00Z")
+future_end = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=30)).strftime("%Y-%m-%dT10:00:00Z")
+
+#calculate a past date for testing
+past_start = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=30)).strftime("%Y-%m-%dT09:00:00Z")
+past_end = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=30)).strftime("%Y-%m-%dT10:00:00Z")
 
 
 @pytest.mark.parametrize(
     "class_name,start_date,end_date,location,capacity,expected_status",
     [
-        ("", "2026-02-20T09:00:00Z", "2026-02-20T10:00:00Z", "Studio ZA", 20, 406),
-        ("Yoga Strength", "", "2026-02-20T10:00:00Z", "Studio ZA", 20, 406),
-        ("Yoga Strength", "2026-02-20T09:00:00Z", "", "Studio ZA", 20, 406),
-        ("Yoga Strength", "2026-02-20T09:00:00Z", "2026-02-20T10:00:00Z", "", 20, 406),
-        ("Yoga Strength", "2026-02-20T09:00:00Z", "2026-02-20T10:00:00Z", "Studio ZA", 0, 406),
-        ("Yoga Strength", "2026-02-20T09:00:00Z", "2026-02-20T10:00:00Z", "Studio ZA", -1, 406),
-        ("Yoga Strength", "2026-02-20T09:00:00Z", "2026-02-20T10:00:00Z", "Studio ZA", "0", 500),
-        ("Yoga Strength", "2026-02-20T09:00:00Z", "2026-02-20T10:00:00Z", "Studio ZA", 20, 201),
+        ("", future_start, future_end, "Studio ZA", 20, 406),
+        ("Yoga Strength", "", future_end, "Studio ZA", 20, 406),
+        ("Yoga Strength", future_start, "", "Studio ZA", 20, 406),
+        ("Yoga Strength", future_start, future_end, "", 20, 406),
+        ("Yoga Strength", future_start, future_end, "Studio ZA", 0, 406),
+        ("Yoga Strength", future_start, future_end, "Studio ZA", -1, 406),
+        ("Yoga Strength", future_start, future_end, "Studio ZA", "0", 500),
+        ("Yoga Strength", past_start, future_end, "Studio ZA", 20, 406),
+        ("Yoga Strength", "invalid-date", future_end, "Studio ZA", 20, 406),
+        ("Yoga Strength", future_start, future_end, "Studio ZA", 20, 201),
     ],
 )
 def test_trainer_create_class_not_acceptable(client,trainer_headers,class_name,start_date,end_date,location,capacity,expected_status,):
@@ -36,8 +47,8 @@ def test_member_create_class_forbidden(client, member_headers):
         headers=member_headers,
         json={
             "class_name": "Yoga Strength",
-            "start_date": "2026-02-20T09:00:00Z",
-            "end_date": "2026-02-20T10:00:00Z",
+            "start_date": future_start,
+            "end_date": future_end,
             "location": "Studio ZA",
             "capacity": 20,
         },
@@ -60,8 +71,8 @@ def test_create_class_failed_create_returns_400(client, trainer_headers, monkeyp
         headers=trainer_headers,
         json={
             "class_name": "Yoga Strength",
-            "start_date": "2026-02-20T09:00:00Z",
-            "end_date": "2026-02-20T10:00:00Z",
+            "start_date": future_start,
+            "end_date": future_end,
             "location": "Studio ZA",
             "capacity": 20,
         },
