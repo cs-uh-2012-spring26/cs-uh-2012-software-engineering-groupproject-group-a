@@ -9,6 +9,9 @@ future_end = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(
 past_start = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=30)).strftime("%Y-%m-%dT09:00:00Z")
 past_end = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=30)).strftime("%Y-%m-%dT10:00:00Z")
 
+#bad end date (before start)
+bad_end = future_start.replace("T09:00:00Z", "T08:00:00Z")
+
 
 @pytest.mark.parametrize(
     "class_name,start_date,end_date,location,capacity,expected_status",
@@ -22,6 +25,7 @@ past_end = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(da
         ("Yoga Strength", future_start, future_end, "Studio ZA", "0", 500),
         ("Yoga Strength", past_start, future_end, "Studio ZA", 20, 406),
         ("Yoga Strength", "invalid-date", future_end, "Studio ZA", 20, 406),
+        ("Yoga Strength", future_start, bad_end, "Studio ZA", 20, 406),
         ("Yoga Strength", future_start, future_end, "Studio ZA", 20, 201),
     ],
 )
