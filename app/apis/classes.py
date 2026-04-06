@@ -7,6 +7,7 @@ from app.apis import MSG
 from app.db.users import UserResource
 from app.db.classes import ClassResource
 from app.services.email_service import EmailService
+import datetime
 
 api = Namespace(
     "classes", description="API endpoints for class viewing and creation"
