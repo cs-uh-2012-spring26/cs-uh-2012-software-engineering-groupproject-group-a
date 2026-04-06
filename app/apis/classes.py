@@ -7,7 +7,6 @@ from app.apis import MSG
 from app.db.users import UserResource
 from app.db.classes import ClassResource
 from app.services.email_service import EmailService
-import datetime
 
 api = Namespace(
     "classes", description="API endpoints for class viewing and creation"
@@ -159,9 +158,9 @@ class CreateClass(Resource):
 
         # Validate that start_date is in the future and end_date > start_date
         try:
-            start_dt = datetime.datetime.strptime(start_date, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
-            end_dt = datetime.datetime.strptime(end_date, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
-            now = datetime.datetime.now(datetime.timezone.utc)
+            start_dt = datetime.strptime(start_date, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+            end_dt = datetime.strptime(end_date, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+            now = datetime.now(timezone.utc)
             if start_dt <= now:
                 return {MSG: "Class start date must be in the future"}, HTTPStatus.NOT_ACCEPTABLE
             if end_dt <= start_dt:

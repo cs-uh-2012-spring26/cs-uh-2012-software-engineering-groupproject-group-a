@@ -192,7 +192,7 @@ We also clarified the system would have three user types: admin, member, and gue
 8. System returns `200 OK` with:
    ```json
    {
-     "members": ["username1", "username2", "..."]
+   	"members": ["username1", "username2", "..."]
    }
    ```
 
@@ -258,7 +258,10 @@ We also clarified the system would have three user types: admin, member, and gue
 5. No members are booked in the class
    1. System returns `200 OK` with message such as `"No reminder emails sent because no members are booked in this class"`.
 
-6. Email service fails while sending
+6. Class has already started/passed
+   1. System returns `400 Bad Request` with message `"Cannot send reminders for a class that has already passed"`.
+
+7. Email service fails while sending
    1. System returns `400 Bad Request` with message `"Failed to send reminder emails"`.
 
 **Success Guarantee / Postconditions**
