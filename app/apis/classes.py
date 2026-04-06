@@ -2,6 +2,7 @@ from flask_restx import Namespace, Resource, fields
 from flask import request
 from flask_jwt_extended import get_jwt, get_jwt_identity, jwt_required
 from http import HTTPStatus
+from datetime import datetime, timezone
 from app.apis import MSG
 from app.db.users import UserResource
 from app.db.classes import ClassResource
@@ -78,6 +79,10 @@ remind_class_not_found = api.model("RemindClassNotFound", {
 
 remind_class_forbidden = api.model("RemindClassForbidden", {
     MSG: fields.String(example="Only the trainer of this class can send reminders")
+})
+
+remind_class_bad_request = api.model("RemindClassBadRequest", {
+    MSG: fields.String(example="Class is in the past or has invalid date")
 })
 
 # documented response schema for swagger
@@ -290,6 +295,7 @@ class ClassReminder(Resource):
     @api.response(HTTPStatus.UNPROCESSABLE_ENTITY, "Invalid class id", remind_class_invalid_id)
     @api.response(HTTPStatus.NOT_FOUND, "Class not found", remind_class_not_found)
     @api.response(HTTPStatus.FORBIDDEN, "Role not allowed", remind_class_forbidden)
+    @api.response(HTTPStatus.BAD_REQUEST, "Class is in the past or has invalid date", remind_class_bad_request)
     def post(self, class_id):
         claims = get_jwt()
         user_role = claims.get("role")
@@ -314,7 +320,17 @@ class ClassReminder(Resource):
         class_info = class_resource.get_class_by_id(class_id)
         class_name_raw = class_info.get("class_name") if isinstance(class_info, dict) else None
         class_name = class_name_raw if isinstance(class_name_raw, str) and len(class_name_raw) > 0 else "your upcoming class"
-
+        
+        # check that class is not in the past
+        start_date_raw = class_info.get("start_date") if isinstance(class_info, dict) else None
+        if isinstance(start_date_raw, str) and len(start_date_raw) > 0:
+            try:
+                start_dt = datetime.fromisoformat(start_date_raw.replace("Z", "+00:00"))
+                if start_dt < datetime.now(timezone.utc):
+                    return {MSG: "Cannot send reminders for a class that has already passed"}, HTTPStatus.BAD_REQUEST
+            except ValueError:
+                return {MSG: "Class has an invalid start date format"}, HTTPStatus.BAD_REQUEST
+        
         sent = 0
         failed = 0
         errors = []
