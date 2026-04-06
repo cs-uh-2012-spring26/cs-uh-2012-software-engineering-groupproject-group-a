@@ -6,6 +6,7 @@ from app.apis import MSG
 from app.db.users import UserResource
 from app.db.classes import ClassResource
 from app.services.email_service import EmailService
+import datetime
 
 api = Namespace(
     "classes", description="API endpoints for class viewing and creation"
@@ -14,8 +15,8 @@ api = Namespace(
 # input model for creating a class
 create_class_model = api.model("CreateClass", {
     "class_name": fields.String(required=True, description="Class name/title", example="Morning Yoga"),
-    "start_date": fields.String(required=True, description="Start datetime (ISO)", example="2026-02-20T09:00:00Z"),
-    "end_date": fields.String(required=True, description="End datetime (ISO)", example="2026-02-20T10:00:00Z"),
+    "start_date": fields.String(required=True, description="Start datetime (ISO format, must be in the future)", example="2026-05-20T09:00:00Z"),
+    "end_date": fields.String(required=True, description="End datetime (ISO, must be after start_date)", example="2026-05-20T10:00:00Z"),
     "location": fields.String(required=True, description="Location of class", example="Studio A"),
     "capacity": fields.Integer(required=True, description="Maximum capacity", example=20)
 })
@@ -115,8 +116,8 @@ class CreateClass(Resource):
     @jwt_required()
     @api.doc(security='Bearer', params={
         "class_name": "Name/title of the class",
-        "start_date": "Start datetime for the class",
-        "end_date": "End datetime for the class",
+        "start_date": "Start datetime for the class (must be in the future)",
+        "end_date": "End datetime for the class (must be after start_date)",
         "location": "Location for the class",
         "capacity": "Maximum number of participants"
     }, description="Create a new class (trainers only)")
@@ -150,6 +151,18 @@ class CreateClass(Resource):
             and isinstance(capacity, int) and capacity > 0
         ):
             return {MSG: "Invalid value provided for one of the fields"}, HTTPStatus.NOT_ACCEPTABLE
+
+        # Validate that start_date is in the future and end_date > start_date
+        try:
+            start_dt = datetime.datetime.strptime(start_date, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
+            end_dt = datetime.datetime.strptime(end_date, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
+            now = datetime.datetime.now(datetime.timezone.utc)
+            if start_dt <= now:
+                return {MSG: "Class start date must be in the future"}, HTTPStatus.NOT_ACCEPTABLE
+            if end_dt <= start_dt:
+                return {MSG: "Class end date must be after start date"}, HTTPStatus.NOT_ACCEPTABLE
+        except ValueError:
+            return {MSG: "Invalid date format"}, HTTPStatus.NOT_ACCEPTABLE
 
         # get trainer id from user record if available
         user_resource = UserResource()
