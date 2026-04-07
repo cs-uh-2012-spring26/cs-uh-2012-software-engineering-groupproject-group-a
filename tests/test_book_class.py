@@ -100,12 +100,13 @@ def test_book_class_failed_returns_400(client, member_headers, seeded_class, see
 def test_cannot_book_class_when_capacity_is_full(client, app, seeded_class, seeded_member):
 	from app.db.users import UserResource
 	from app.db.classes import ClassResource
+	from bson import ObjectId
 
 	# first member takes the last available spot
 	with app.app_context():
 		class_resource = ClassResource()
 		class_resource.collection.update_one(
-			{"_id": seeded_class["_id"]},
+			{"_id": ObjectId(seeded_class["_id"])},
 			{"$set": {"capacity": 1}},
 		)
 		class_resource.book_class(seeded_member["username"], seeded_class["_id"], seeded_member["_id"])
