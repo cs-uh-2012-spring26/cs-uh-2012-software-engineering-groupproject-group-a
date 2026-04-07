@@ -78,6 +78,11 @@ class ClassResource:
         if username in member_list:
             return "already_booked"
 
+        # block new bookings once the class reached max capacity
+        capacity = fitness_class.get("capacity", 0)
+        if len(member_list) >= capacity:
+            return "class_full"
+
         # if not in list, push to it
         result = self.collection.update_one(
             {"_id": class_oid},

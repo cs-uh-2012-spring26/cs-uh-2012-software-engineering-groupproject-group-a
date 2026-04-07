@@ -1,4 +1,5 @@
 import pytest
+from flask_jwt_extended import create_access_token
 
 @pytest.mark.parametrize(
 	"class_id,expected_status,expected_message",
@@ -94,3 +95,35 @@ def test_book_class_failed_returns_400(client, member_headers, seeded_class, see
 
 	assert response.status_code == 400
 	assert response.get_json()["message"] == "Failed to book class"
+
+
+def test_cannot_book_class_when_capacity_is_full(client, app, seeded_class, seeded_member):
+	from app.db.users import UserResource
+	from app.db.classes import ClassResource
+	from bson import ObjectId
+
+	# first member takes the last available spot
+	with app.app_context():
+		class_resource = ClassResource()
+		class_resource.collection.update_one(
+			{"_id": ObjectId(seeded_class["_id"])},
+			{"$set": {"capacity": 1}},
+		)
+		class_resource.book_class(seeded_member["username"], seeded_class["_id"], seeded_member["_id"])
+
+		# create a second member and token for the new booking attempt
+		user_resource = UserResource()
+		user_resource.create_user(
+			full_name="Second Member",
+			username="second_member",
+			email="second_member@example.com",
+			password="password123",
+		)
+		second_headers = {
+			"Authorization": f"Bearer {create_access_token(identity='second_member', additional_claims={'role': 'member', 'full_name': 'Second Member'})}"
+		}
+
+	response = client.post(f"/classes/{seeded_class['_id']}/book", headers=second_headers)
+
+	assert response.status_code == 403
+	assert response.get_json()["message"] == "Class is full"

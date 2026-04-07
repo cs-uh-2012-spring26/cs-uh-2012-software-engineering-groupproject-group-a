@@ -54,6 +54,10 @@ book_class_conflict = api.model("BookClassConflict", {
     MSG: fields.String(example="User already booked this class")
 })
 
+book_class_class_full = api.model("BookClassFull", {
+    MSG: fields.String(example="Class is full")
+})
+
 book_class_forbidden = api.model("BookClassForbidden", {
     MSG: fields.String(example="Only trainers and members allowed")
 })
@@ -204,6 +208,7 @@ class ClassBooking(Resource):
     @api.response(HTTPStatus.UNPROCESSABLE_ENTITY, "Invalid class id", book_class_invalid_id)
     @api.response(HTTPStatus.NOT_FOUND, "Class not found", book_class_not_found)
     @api.response(HTTPStatus.CONFLICT, "Already booked", book_class_conflict)
+    @api.response(HTTPStatus.FORBIDDEN, "Class full", book_class_class_full)
     @api.response(HTTPStatus.FORBIDDEN, "Role not allowed", book_class_forbidden)
     @api.response(HTTPStatus.BAD_REQUEST, "Booking failed", book_class_bad_request)
     def post(self, class_id):
@@ -238,6 +243,9 @@ class ClassBooking(Resource):
             return {MSG: "Trainer cannot book their own class"}, HTTPStatus.FORBIDDEN
         if booking_status == "already_booked":
             return {MSG: "User already booked this class"}, HTTPStatus.CONFLICT
+        if booking_status == "class_full":
+            # using forbidden here to match the existing use-case status mapping
+            return {MSG: "Class is full"}, HTTPStatus.FORBIDDEN
 
         return {MSG: "Failed to book class"}, HTTPStatus.BAD_REQUEST
 
