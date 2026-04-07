@@ -59,6 +59,44 @@ def test_remind_class_wrong_trainer(mock_get_members, mock_get_user, client, tra
     
     assert response.status_code == HTTPStatus.FORBIDDEN
     assert "Only the trainer" in response.json["message"]
+
+
+@patch(MOCK_SEND_CLASS_REMINDER)
+@patch(MOCK_GET_CLASS_BY_ID)
+@patch(MOCK_GET_CLASS_MEMBERS)
+@patch(MOCK_GET_USER)
+def test_remind_class_past_date_returns_bad_request(mock_get_user, mock_get_members, mock_get_class_by_id, mock_send_email, client, trainer_headers):
+    mock_get_user.return_value = {"_id": "trainer_id"}
+    mock_get_members.return_value = ["member_1"]
+    mock_get_class_by_id.return_value = {
+        "class_name": "Yoga",
+        "start_date": "2000-01-01T09:00:00Z",
+    }
+
+    response = client.post("/classes/remind/valid_id_here", headers=trainer_headers)
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.json["message"] == "Cannot send reminders for a class that has already passed"
+    mock_send_email.assert_not_called()
+
+
+@patch(MOCK_SEND_CLASS_REMINDER)
+@patch(MOCK_GET_CLASS_BY_ID)
+@patch(MOCK_GET_CLASS_MEMBERS)
+@patch(MOCK_GET_USER)
+def test_remind_class_invalid_date_returns_bad_request(mock_get_user, mock_get_members, mock_get_class_by_id, mock_send_email, client, trainer_headers):
+    mock_get_user.return_value = {"_id": "trainer_id"}
+    mock_get_members.return_value = ["member_1"]
+    mock_get_class_by_id.return_value = {
+        "class_name": "Yoga",
+        "start_date": "not-an-iso-date",
+    }
+
+    response = client.post("/classes/remind/valid_id_here", headers=trainer_headers)
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.json["message"] == "Class has an invalid start date format"
+    mock_send_email.assert_not_called()
     
     
 @patch(MOCK_SEND_CLASS_REMINDER)
