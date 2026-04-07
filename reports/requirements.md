@@ -156,7 +156,7 @@ We also clarified the system would have three user types: admin, member, and gue
 5. Trainer attempts to book their own class
    1. System returns `403 Forbidden`.
 6. Class is full.
-   1. System returns `403 Forbidden`.
+   1. System returns `403 Forbidden` with message `"Class is full"`.
 7. Unexpected booking failure
    1. System returns `400 Bad Request`.
 
@@ -258,7 +258,7 @@ We also clarified the system would have three user types: admin, member, and gue
 5. No members are booked in the class
    1. System returns `200 OK` with message such as `"No reminder emails sent because no members are booked in this class"`.
 
-6. Class has already started/passed
+6. Trainer attempts to send a reminder notification for a class that has already ended
    1. System returns `400 Bad Request` with message `"Cannot send reminders for a class that has already passed"`.
 
 7. Email service fails while sending
