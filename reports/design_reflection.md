@@ -105,7 +105,7 @@
 **Method Name**: `ClassReminder.post in ClassReminder`
 
 ![smell_3_1_1](./img/smell_3_1_1.png)
-![smell_3_2_1](./img/smell_3_2_2.png)
+![smell_3_2_1](./img/smell_3_1_2.png)
 
 ---
 
