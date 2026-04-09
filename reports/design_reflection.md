@@ -9,8 +9,8 @@
 
 <!-- TODO: -->
 <!-- Include design diagrams once we finalize them -->
-
-<!-- class diagram to show main classes and their associations -->
+### Class Diagram
+![class diagram](./img/class_diagram.png)
 
 <!-- sequence diagram that captures the current flow for your book a class endpoint -->
 
