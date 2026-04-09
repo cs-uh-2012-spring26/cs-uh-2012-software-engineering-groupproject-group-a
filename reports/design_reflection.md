@@ -114,6 +114,7 @@
 **File and line number:** `app/apis/classes.py:32-40`
 **Method Name**: `ClassResource.get_class_by_id`
 
+![smell_3_2](./img/smell_3_2.png)
 
 ---
 
