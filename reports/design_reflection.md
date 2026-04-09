@@ -7,13 +7,17 @@
 
 ## Design Diagrams
 
-<!-- TODO: -->
 ### Class Diagram
+
 ![class diagram](./img/class_diagram.png)
 
 ### Book Class Endpoint Sequence Diagram
+
 ![sequence book class](./img/sequence_book.png)
-<!-- sequence diagram that captures the current flow for your endpoint for sending reminders -->
+
+## Sending Reminder Endpoint Sequence Diagram
+
+![sequence reminder](./img/sequence_class_reminder.png)
 
 ## Analysis of the Reflection on Design Principles
 
@@ -36,8 +40,11 @@
 ---
 
 **Principle:** Single Responsibility Principle (SRP)
+
 **File:** `app/api/classes.py`
+
 **Lines:** 321-360
+
 **Method Name:** ClassReminder.post
 
 ![code screenshot](./img/solid2.png)
@@ -47,9 +54,13 @@
 **Refactoring:** Extract a ReminderService with focused methods like validate_trainer_access, load_reminder_targets, validate_class_time_window, and send_reminders. Keep ClassReminder.post as a thin transport adapter that maps service results to HTTP codes.
 
 ---
+
 **Principle:** Dependency Inversion Principle (DIP)
+
 **File:** `app/apis/classes.py`
+
 **Lines:** 176-181
+
 **Class/Method:** CreateClass.post
 
 ![code screenshot](./img/solid3.png)
@@ -61,8 +72,11 @@
 ---
 
 **Principle:** Open/Closed Principle (OCP)
+
 **File:** `app/apis/classes.py`
+
 **Lines:** 236-250
+
 **Class/Method:** ClassBooking.post
 
 ![code screenshot](./img/solid4.png)
@@ -88,6 +102,12 @@
 **Explanation:** Booking outcomes are returned as string literals such as "booked", "invalid_class_id", and "already_booked". This creates a stringly typed protocol that callers must hardcode with if-chains. Adding a new outcome requires modifying the code in multiple places and files, so behavior extension is not closed for modification.
 
 **Refactoring:** Replace string literals with a typed result (possibly enum) or domain exceptions. Alternatively, figure out a different approach so new outcomes are added in one place, not across endpoints.
+
+---
+
+### Reflection on the Analysis
+
+<!-- TODO: insert the reflection on our analysis paragraphs here -->
 
 ## Identified Code Smells
 
@@ -126,6 +146,7 @@
 **Long Method:** One endpoint method handles authorization, ownership checks, class lookup, date validation, email iteration, error aggregation, and response construction in a single block.
 
 **File and line number:** `app/apis/classes.py:319-381`
+
 **Method Name**: `ClassReminder.post in ClassReminder`
 
 ![smell_3_1_1](./img/smell_3_1_1.png)
@@ -136,22 +157,25 @@
 **Primitive Obsession:** Usage of primitive types instead of small objects for simple tasks.
 
 **File and line number:** `app/apis/classes.py:32-40`
+
 **Method Name**: `ClassResource.get_class_by_id`
 
 ![smell_3_2](./img/smell_3_2.png)
 
-
 **File and line number:** `app/db/classes.py:44-58`
+
 **Method Name**: `ClassResource.get_class_members`
 
 ![smell_3_3](./img/smell_3_3.png)
 
 **File and line number:** `app/db/classes.py:60-94`
+
 **Method Name**: `ClassResource.book_class`
 
 ![smell_3_4](./img/smell_3_4.png)
 
 **File and line number:** `app/apis/classes.py:214-250`
+
 **Method Name**: `ClassBooking.post`
 
 ![smell_3_5](./img/smell_3_5.png)
@@ -161,11 +185,13 @@
 **Duplicate Code:** same three-line block
 
 **File and line number:** `app/apis/classes.py:289-291`
+
 **Method Name**: `ClassReminder.get`
 
 ![smell 4](./img/smell_4_1.png)
 
 **File and line number:** `app/apis/classes.py:326-328`
+
 **Method Name**: `ClassReminder.post`
 
 ![smell 4](./img/smell_4_2.png)
@@ -175,6 +201,7 @@
 **Dead Code:** redundant validation - password field validated twice
 
 **File and line number:** `app/apis/auth.py:76-87`
+
 **Method Name**: `Register.post`
 
 ![smell 5](./img/smell_5.png)
@@ -183,4 +210,4 @@
 
 ## Reflection on Current Design for New Features
 
-<!-- Task 4 reflection of how your current design (especially the identified violations) may help or hinder the implementation of the two new features above, especially while keeping maintainability and extensibility in mind -->
+<!-- TODO: Task 4 reflection of how your current design (especially the identified violations) may help or hinder the implementation of the two new features above, especially while keeping maintainability and extensibility in mind -->
