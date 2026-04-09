@@ -8,12 +8,11 @@
 ## Design Diagrams
 
 <!-- TODO: -->
-<!-- Include design diagrams once we finalize them -->
 ### Class Diagram
 ![class diagram](./img/class_diagram.png)
 
-<!-- sequence diagram that captures the current flow for your book a class endpoint -->
-
+### Book Class Endpoint Sequence Diagram
+![sequence book class](./img/sequence_book.png)
 <!-- sequence diagram that captures the current flow for your endpoint for sending reminders -->
 
 ## Analysis of the Reflection on Design Principles
@@ -73,9 +72,22 @@
 **Refactoring:** Replace string return codes with a BookingResult enumeration. Then map values to HTTP responses in a single dictionary. New outcomes are then handled by adding one member and one mapping entry, without making additions.
 
 ---
-<!-- add others here -->
 
-<!-- Detailed written analysis of the reflection on design principles for Task 2. See task description for what should be provided for each violation -->
+**Principle:** Open/Closed Principle (OCP)
+
+**Status:** Violation
+
+**File:** `app/db/classes.py`
+
+**Lines:** 60-84
+
+**Method:** ClassResource.book_class
+
+![code smell 5](./img/solid_5.png)
+
+**Explanation:** Booking outcomes are returned as string literals such as "booked", "invalid_class_id", and "already_booked". This creates a stringly typed protocol that callers must hardcode with if-chains. Adding a new outcome requires modifying the code in multiple places and files, so behavior extension is not closed for modification.
+
+**Refactoring:** Replace string literals with a typed result (possibly enum) or domain exceptions. Alternatively, figure out a different approach so new outcomes are added in one place, not across endpoints.
 
 ## Identified Code Smells
 
@@ -143,6 +155,29 @@
 **Method Name**: `ClassBooking.post`
 
 ![smell_3_5](./img/smell_3_5.png)
+
+---
+
+**Duplicate Code:** same three-line block
+
+**File and line number:** `app/apis/classes.py:289-291`
+**Method Name**: `ClassReminder.get`
+
+![smell 4](./img/smell_4_1.png)
+
+**File and line number:** `app/apis/classes.py:326-328`
+**Method Name**: `ClassReminder.post`
+
+![smell 4](./img/smell_4_2.png)
+
+---
+
+**Dead Code:** redundant validation - password field validated twice
+
+**File and line number:** `app/apis/auth.py:76-87`
+**Method Name**: `Register.post`
+
+![smell 5](./img/smell_5.png)
 
 ---
 
