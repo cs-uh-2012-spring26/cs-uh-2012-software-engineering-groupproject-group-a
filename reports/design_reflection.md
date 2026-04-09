@@ -47,6 +47,19 @@
 
 **Refactoring:** Extract a ReminderService with focused methods like validate_trainer_access, load_reminder_targets, validate_class_time_window, and send_reminders. Keep ClassReminder.post as a thin transport adapter that maps service results to HTTP codes.
 
+---
+**Principle:** Dependency Inversion Principle (DIP)
+**File:** `app/apis/classes.py`
+**Lines:** 176-181
+**Class/Method:** CreateClass.post
+
+![code screenshot](./img/solid3.png)
+
+**Explanation:** CreateClass.post directly instantiates UserResource() and ClassResource() inside the method body. On lines 176 and 181, two database objects are created: user_resource, class_resource. It is hardcoded, there is no way to change this without editing the method. For example, if we wanted to swap out UserResource for a different implementation, or use a mock in tests, we cannot, the real MongoDB version is always created by this method.
+
+**Refactoring:** Instead of creating new dependencies inside the method, they should be passed in from outside. The handler would just use whatever it receives, without knowing what the specific implementation is. This way the database layer can be altered and this method does not have to change.
+
+---
 
 <!-- add others here -->
 
@@ -82,7 +95,26 @@
 
 **Method Name**: `ClassMembers`
 
-[smell_2_1](./img/smell_2_1.png)
+![smell_2_1](./img/smell_2_1.png)
+
+---
+
+**Long Method:** One endpoint method handles authorization, ownership checks, class lookup, date validation, email iteration, error aggregation, and response construction in a single block.
+
+**File and line number:** `app/apis/classes.py:319-381`
+**Method Name**: `ClassReminder.post in ClassReminder`
+
+![smell_3_1_1](./img/smell_3_1_1.png)
+![smell_3_2_1](./img/smell_3_1_2.png)
+
+---
+
+**Primitive Obsession:** Usage of primitive types instead of small objects for simple tasks.
+
+**File and line number:** `app/apis/classes.py:32-40`
+**Method Name**: `ClassResource.get_class_by_id`
+
+![smell_3_2](./img/smell_3_2.png)
 
 ---
 
