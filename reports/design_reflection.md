@@ -41,7 +41,7 @@
 **Lines:** 321-360
 **Method Name:** ClassReminder.post
 
-[code screenshot](./img/solid2.png)
+![code screenshot](./img/solid2.png)
 
 **Explanation:** The endpoint method handles auth checks, trainer ownership checks, class date validation, member lookup, email sending, error aggregation, and HTTP response shaping in one place. The method has multiple independent reasons to change: JWT/role policy changes, class-validation rules, email-delivery behavior, and response-contract changes. That concentration makes it harder to test and modify safely because unrelated concerns are coupled in a single function.
 
@@ -61,6 +61,18 @@
 
 ---
 
+**Principle:** Open/Closed Principle (OCP)
+**File:** `app/apis/classes.py`
+**Lines:** 236-250
+**Class/Method:** ClassBooking.post
+
+![code screenshot](./img/solid4.png)
+
+**Explanation:** Booking outcomes from ClassResource.book_class() are returned as plain strings such as "class_full" and "already_booked" using a series of "if" statements. If a new booking outcome is introduced such as "class_cancelled", the existing ClassBooking.post method must be opened and modified, violating OCP.
+
+**Refactoring:** Replace string return codes with a BookingResult enumeration. Then map values to HTTP responses in a single dictionary. New outcomes are then handled by adding one member and one mapping entry, without making additions.
+
+---
 <!-- add others here -->
 
 <!-- Detailed written analysis of the reflection on design principles for Task 2. See task description for what should be provided for each violation -->
@@ -115,6 +127,22 @@
 **Method Name**: `ClassResource.get_class_by_id`
 
 ![smell_3_2](./img/smell_3_2.png)
+
+
+**File and line number:** `app/db/classes.py:44-58`
+**Method Name**: `ClassResource.get_class_members`
+
+![smell_3_3](./img/smell_3_3.png)
+
+**File and line number:** `app/db/classes.py:60-94`
+**Method Name**: `ClassResource.book_class`
+
+![smell_3_4](./img/smell_3_4.png)
+
+**File and line number:** `app/apis/classes.py:214-250`
+**Method Name**: `ClassBooking.post`
+
+![smell_3_5](./img/smell_3_5.png)
 
 ---
 
