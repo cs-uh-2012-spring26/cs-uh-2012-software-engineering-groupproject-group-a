@@ -53,7 +53,7 @@
 **Lines:** 176-181
 **Class/Method:** CreateClass.post
 
-[code screenshot](./img/solid3.png)
+![code screenshot](./img/solid3.png)
 
 **Explanation:** CreateClass.post directly instantiates UserResource() and ClassResource() inside the method body. On lines 176 and 181, two database objects are created: user_resource, class_resource. It is hardcoded, there is no way to change this without editing the method. For example, if we wanted to swap out UserResource for a different implementation, or use a mock in tests, we cannot, the real MongoDB version is always created by this method.
 
@@ -95,7 +95,7 @@
 
 **Method Name**: `ClassMembers`
 
-[smell_2_1](./img/smell_2_1.png)
+![smell_2_1](./img/smell_2_1.png)
 
 ---
 
@@ -104,7 +104,7 @@
 **File and line number:** `app/apis/classes.py:319-381`
 **Method Name**: `ClassReminder.post in ClassReminder`
 
-[INSERT IMAGE HERE](LINK)
+![smell_3_1](./img/smell_3_1.png)
 
 ---
 
@@ -113,8 +113,7 @@
 **File and line number:** `app/apis/classes.py:32-40`
 **Method Name**: `ClassResource.get_class_by_id`
 
-[smell_3_1](./img/smell_3_1.png)
-[smell_3_2](./img/smell_3_2.png)
+![smell_3_2](./img/smell_3_2.png)
 
 ---
 
