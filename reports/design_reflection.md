@@ -36,6 +36,18 @@
 
 ---
 
+**Principle:** Single Responsibility Principle (SRP)
+**File:** `app/api/classes.py`
+**Lines:** 321-360
+**Method Name:** ClassReminder.post
+
+[code screenshot](./img/solid2.png)
+
+**Explanation:** The endpoint method handles auth checks, trainer ownership checks, class date validation, member lookup, email sending, error aggregation, and HTTP response shaping in one place. The method has multiple independent reasons to change: JWT/role policy changes, class-validation rules, email-delivery behavior, and response-contract changes. That concentration makes it harder to test and modify safely because unrelated concerns are coupled in a single function.
+
+**Refactoring:** Extract a ReminderService with focused methods like validate_trainer_access, load_reminder_targets, validate_class_time_window, and send_reminders. Keep ClassReminder.post as a thin transport adapter that maps service results to HTTP codes.
+
+
 <!-- add others here -->
 
 <!-- Detailed written analysis of the reflection on design principles for Task 2. See task description for what should be provided for each violation -->
@@ -61,6 +73,16 @@
 **Method Name**: `Create Class Endpoint`
 
 ![smell_1_3](./img/smell_1_3.png)
+
+---
+
+**Comments:** Redundant comment that could be explained with just code.
+
+**File and line number:** `app/apis/classes.py:244-278`
+
+**Method Name**: `ClassMembers`
+
+[smell_2_1](./img/smell_2_1.png)
 
 ---
 
