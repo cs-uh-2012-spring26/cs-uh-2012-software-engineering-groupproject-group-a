@@ -7,8 +7,7 @@ A REST API which enables users to create, browse, and manage fitness classes of 
 ## Prerequisites
 
 - python 3.10 or higher
-- MongoDB installed. Follow [here](https://www.mongodb.com/docs/manual/installation/)
-  to install MongoDB locally.
+- MongoDB installed. Follow [here](https://www.mongodb.com/docs/manual/installation/) to install MongoDB locally.
 
 ## Tech Stack
 
@@ -22,6 +21,19 @@ This flask web app uses:
   for more info specific to testing Flask applications)
 - [mongomock][mongomock] for mocking the mongodb during unit testing
 
+<details>
+<summary>Click to see full list of resources</summary>
+
+- [Flask-RESTX Quickstart][flask-restx]
+- [Flask-RESTX Scaling Guide][flask-restx-scaling]
+- [OpenAPI Specification][openapi-specification]
+- [PyMongo Documentation][pymongo]
+- [pytest Documentation][pytest]
+- [Flask Testing Documentation][pytest-flask]
+- [mongomock Documentation][mongomock]
+
+</details>
+
 [flask-restx]: https://flask-restx.readthedocs.io/en/latest/quickstart.html
 [flask-restx-scaling]: https://flask-restx.readthedocs.io/en/latest/scaling.html
 [openapi-specification]: https://swagger.io/docs/specification/v3_0/about/
@@ -34,13 +46,13 @@ This flask web app uses:
 
 ### Ensuring a local database instance is running
 
-There are two ways run the application:
+There are two ways to run the application:
 
-- a local database which will allow for persistant data, even if you terminate the server and restart
+- a local database which will allow for persistent data, even if you terminate the server and restart
 
-- or using the the MOCK_DB flag to be true
+- or using the MOCK_DB flag to be true
 
-Firstly, open your terminal and enter the command `brew services restart mongodb-community` on MacOS or
+Firstly, open your terminal and enter the command `brew services restart mongodb-community` on macOS or
 `sudo systemctl restart mongod` on Linux. (Find the equivalent for your OS). This will start a local MongoDB instance which the API server will connect to.
 
 Next, we want to ensure that the service started with no issues, run `brew services list`.
@@ -101,8 +113,8 @@ In order to ensure that you are able to test the protected API endpoints (such a
 1. Use the `auth/register` endpoint to create an account.
    1. Use `"trainer_code": "IAMATRAINER"` for creating a trainer account, otherwise role will be member.
 
-2. After registration, use the `auth/login` endpoint to login (this will provide you with an authentication token)
+2. After registration, use the `auth/login` endpoint to log in (this will provide you with an authentication token)
    1. **IMPORTANT**: Make sure to copy the token from `"access_token": "hjX02ksdkKkjqD..."` in the JSON response.
 3. Finally, SwaggerUI provides an "Authorize" button at the top of the page. Click this:
-   1. For the token value field, write `Bearer <token>`, replacing `<token>` with the copied string you recieved from the login endpoint. Make sure to include a space between Bearer and the token.
+   1. For the token value field, write `Bearer <token>`, replacing `<token>` with the copied string you received from the login endpoint. Make sure to include a space between Bearer and the token.
    1. Hit Authorize and you will now be "logged in" and authenticated + authorized for the protected routes.
