@@ -226,4 +226,22 @@ The reflection on design and code smells identifies a consistent pattern across 
 
 ## Reflection on Current Design for New Features
 
-<!-- TODO: Task 4 reflection of how your current design (especially the identified violations) may help or hinder the implementation of the two new features above, especially while keeping maintainability and extensibility in mind -->
+### New Features To Implement
+
+> **Feature 6: Create Recurring Class** <br>
+> As a trainer, I want to create recurring classes (e.g., daily or monthly) so that I don’t have to manually re-enter the same class multiple times.
+
+> **Feature 7: Configure Notifications** <br>
+> As someone registered in a class, I want to choose how I receive reminders (e.g., email and/or Telegram and/or SMS etc) so I can stay informed in the ways that suit me.
+
+### Reflection
+
+Having done our analysis, identifying numerous violations and code smells in our codebase, we have a much better understanding of the aspects where we can improve, and where we already have a good found
+
+Our current design gives us a decent starting point because there is already a clear split between API handlers, data-access resources, and an email service, which means Feature 6 can be added without rewriting too much. For example, recurring classes can build on the same class creation flow. The main risk is that current handlers contain hardcoded role checks, repeated validation, and direct dependency construction, so each new recurrence rule (daily, weekly, monthly) will likely force edits in multiple places and increase duplication. To address this, we will first focus on eliminating and reducing the violations and code smells by refactoring the needed code, after which we will be able to have a clear understanding of what changes we can make to the actual system to implement these new features in a scalable and maintainable way.
+
+For example, the current class schema only supports single events. To add the capability for recurring events, we need to either change the class template to include a recurring flag and list of datetimes or a separate recurrence entity to generate these recurrences. We would also like to modify the current date handling as it uses string checking everywhere.
+
+Feature 7 will be harder with the current shape because reminder logic is currently concentrated in one long endpoint and tightly coupled to email behavior. Adding preferences would likely turn that endpoint into a large conditional block. From a maintainability and extensibility perspective, the key design flaws are OCP violations in role/channel branching, SRP violations in endpoint methods doing too much, and DIP violations from concrete dependencies in handlers. Changes could require heavily modifying existing code or potentially reworking the email reminder service to be more modular.
+
+Overall, we believe our app is in good shape and with a little bit of refactoring, we can make it a lot more maintainable and scalable.
