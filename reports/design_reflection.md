@@ -107,7 +107,7 @@
 
 ### Reflection on the Analysis
 
-<!-- TODO: insert the reflection on our analysis paragraphs here -->
+The reflection on design and code smells identifies a consistent pattern across the violations: key endpoint methods in the classes flow are lengthy and could be divided into smaller, more focused parts while also being tightly coupled to concrete implementations and hardcoded logic. Role checks are embedded directly in handlers, booking outcomes are passed around as raw strings, and resources are instantiated inside methods rather than injected through abstractions. Together, this means behavior is spread across transport, business, and persistence concerns in the same places, so even small policy or workflow changes require edits in multiple locations. The implication is that feature changes will become increasingly tricky and risky: adding a new role, booking rule, or reminder behavior can trigger need for various edits. Over time, this slows delivery because we must reason about many unrelated concerns in each change. We could try to replace string outcomes with objects or domain errors, and focus on passing in abstractions rather than instantiations into methods. This would make future changes more testable and easier to extend without rewriting stable code paths.
 
 ## Identified Code Smells
 
