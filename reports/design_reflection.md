@@ -5,22 +5,24 @@
 We first attempted to generate class diagrams and sequence diagrams using existing tools (i.e. pyreverse and py-sequence-reverse). We thought these diagrams could be easily built from the automatic examination of our codebase, but pyreverse generated an incomplete and incorrect class diagram and py-sequence-reverse did not work entirely. As such, we used what we got from these tools as a starting step, analysed the code as well as used the pyreverse diagram to understand the classes. Aiding our efforts, the website plantuml proved to be a valuable tool. It could generate sequence diagrams from an intermediate representation which looks similar to the actual code. It could also cleanly generate the class diagram. We all contributed to the identification of at least 5 code smells and 5 SOLID principle violations after which we convened multiple times to discuss the most appropriate ones to include in the final report. Below is the summary of each member’s responsibilities.
 
 1. Tokla Roeum:
-    1. Book a class endpoint sequence diagram
-    1. 5+ code smells
-    1. 5+ SOLID principle violations
-1. Oleksander Anyschenko:
-    1. Class reminder sequence diagram
-    1. A code smell
-    1. 5+ SOLID principle violations
+   1. Book a class endpoint sequence diagram
+   1. 5+ code smells
+   1. 5+ SOLID principle violations
+1. Oleksandr Anyshchenko:
+   1. Class reminder sequence diagram
+   1. A code smell
+   1. 5+ SOLID principle violations
 1. Viesturs Olins:
-    1. Class diagram
-    1. 5+ code smells
-    1. 5+ SOLID principle violations
+   1. Class diagram
+   1. 5+ code smells
+   1. 5+ SOLID principle violations
 1. Dijar Selami
-    1. Analysis of the code
-    1. 5+ code smells
-    1. 5+ SOLID principle violations
+   1. Analysis of the code
+   1. 5+ code smells
+   1. 5+ SOLID principle violations
+
 ---
+
 ## Design Diagrams
 
 ### Class Diagram
