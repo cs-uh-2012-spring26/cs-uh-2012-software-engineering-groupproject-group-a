@@ -3,7 +3,7 @@ from flask import request
 from flask_jwt_extended import get_jwt, get_jwt_identity, jwt_required
 from http import HTTPStatus
 from datetime import datetime, timezone
-from app.apis import MSG, TRAINER, require_roles
+from app.apis import MSG, MEMBER, TRAINER, FORBIDDEN_ROLE_MESSAGE, require_roles
 from app.db.users import UserResource
 from app.db.classes import ClassResource
 from app.services.email_service import EmailService
@@ -31,7 +31,7 @@ create_class_error = api.model("CreateClassError", {
 })
 
 create_class_forbidden = api.model("CreateClassForbidden", {
-    MSG: fields.String(example="Only trainers are allowed to create classes")
+    MSG: fields.String(example=FORBIDDEN_ROLE_MESSAGE)
 })
 
 create_class_bad_request = api.model("CreateClassBadRequest", {
@@ -59,7 +59,7 @@ book_class_class_full = api.model("BookClassFull", {
 })
 
 book_class_forbidden = api.model("BookClassForbidden", {
-    MSG: fields.String(example="Only trainers and members allowed")
+    MSG: fields.String(example=FORBIDDEN_ROLE_MESSAGE)
 })
 
 book_class_bad_request = api.model("BookClassBadRequest", {
@@ -132,7 +132,7 @@ class CreateClass(Resource):
     }, description="Create a new class (trainers only)")
     @api.response(HTTPStatus.CREATED, "Class created", create_class_success)
     @api.response(HTTPStatus.NOT_ACCEPTABLE, "Invalid input", create_class_error)
-    @api.response(HTTPStatus.FORBIDDEN, "Only trainers allowed", create_class_forbidden)
+    @api.response(HTTPStatus.FORBIDDEN, FORBIDDEN_ROLE_MESSAGE, create_class_forbidden)
     @api.response(HTTPStatus.BAD_REQUEST, "Failed to create class", create_class_bad_request)
     @api.expect(create_class_model, validate=True)
     
@@ -205,7 +205,7 @@ class ClassBooking(Resource):
     @api.response(HTTPStatus.NOT_FOUND, "Class not found", book_class_not_found)
     @api.response(HTTPStatus.CONFLICT, "Already booked", book_class_conflict)
     @api.response(HTTPStatus.FORBIDDEN, "Class full", book_class_class_full)
-    @api.response(HTTPStatus.FORBIDDEN, "Role not allowed", book_class_forbidden)
+    @api.response(HTTPStatus.FORBIDDEN, FORBIDDEN_ROLE_MESSAGE, book_class_forbidden)
     @api.response(HTTPStatus.BAD_REQUEST, "Booking failed", book_class_bad_request)
     def post(self, class_id):
         current_user = get_jwt_identity()
@@ -302,6 +302,7 @@ class ClassMembers(Resource):
 @api.route("/remind/<string:class_id>")
 class ClassReminder(Resource):
     @jwt_required()
+    @require_roles(TRAINER)
     @api.doc(
         security="Bearer",
         params={"class_id": "Class ID (Mongo ObjectId string)"},
