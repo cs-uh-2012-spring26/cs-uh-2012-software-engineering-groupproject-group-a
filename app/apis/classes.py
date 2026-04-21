@@ -3,7 +3,7 @@ from flask import request
 from flask_jwt_extended import get_jwt, get_jwt_identity, jwt_required
 from http import HTTPStatus
 from datetime import datetime, timezone
-from app.apis import MSG
+from app.apis import MSG, TRAINER, require_roles
 from app.db.users import UserResource
 from app.db.classes import ClassResource
 from app.services.email_service import EmailService
@@ -122,6 +122,7 @@ class ClassList(Resource):
 
 class CreateClass(Resource):
     @jwt_required()
+    @require_roles(TRAINER)
     @api.doc(security='Bearer', params={
         "class_name": "Name/title of the class",
         "start_date": "Start datetime for the class (must be in the future)",
@@ -137,11 +138,6 @@ class CreateClass(Resource):
     
     def post(self):
         current_user = get_jwt_identity()
-        claims = get_jwt()
-        user_role = claims.get("role")
-
-        if user_role != "trainer":
-            return {MSG: "Only trainers allowed"}, HTTPStatus.FORBIDDEN
 
         assert isinstance(request.json, dict)
 
