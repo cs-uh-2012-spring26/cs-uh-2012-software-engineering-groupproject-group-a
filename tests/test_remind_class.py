@@ -27,7 +27,7 @@ def test_remind_class_unauthorized_user(client, member_headers):
     # members should not be able to send reminders
     response = client.post("/classes/remind/some_class_id", headers = member_headers)
     assert response.status_code == HTTPStatus.FORBIDDEN
-    assert response.json["message"] == "Only trainers allowed"
+    assert response.json["message"] == "Current role is not allowed to access this resource"
     
 @patch(MOCK_GET_USER) # becomes input no2 for following func
 @patch(MOCK_GET_CLASS_MEMBERS) # becomes input no1 for following func

@@ -314,10 +314,6 @@ class ClassReminder(Resource):
     @api.response(HTTPStatus.FORBIDDEN, "Role not allowed", remind_class_forbidden)
     @api.response(HTTPStatus.BAD_REQUEST, "Class is in the past or has invalid date", remind_class_bad_request)
     def post(self, class_id):
-        claims = get_jwt()
-        user_role = claims.get("role")
-        if user_role != "trainer":
-            return {MSG: "Only trainers allowed"}, HTTPStatus.FORBIDDEN
 
         current_user = get_jwt_identity()
         user_resource = UserResource()
