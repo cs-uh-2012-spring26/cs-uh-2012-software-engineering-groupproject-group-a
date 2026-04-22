@@ -121,8 +121,10 @@ class ClassList(Resource):
 @api.route("/create-class")
 
 class CreateClass(Resource):
-    def __init__(self, user_resource=None, class_resource=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, api=None, *args, **kwargs):
+        user_resource = kwargs.pop("user_resource", None)
+        class_resource = kwargs.pop("class_resource", None)
+        super().__init__(api, *args, **kwargs)
         self.user_resource = user_resource if user_resource is not None else UserResource()
         self.class_resource = class_resource if class_resource is not None else ClassResource()
 
