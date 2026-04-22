@@ -1,3 +1,4 @@
+from app.db.classes import ClassResult
 import pytest
 from unittest.mock import patch
 from http import HTTPStatus
@@ -34,7 +35,7 @@ def test_remind_class_unauthorized_user(client, member_headers):
 def test_remind_class_invalid_id(mock_get_members, mock_get_user, client, trainer_headers):
     #client and trainer_headers from conftest.py
     mock_get_user.return_value = {"_id": "trainer_id"}
-    mock_get_members.return_value = "invalid_class_id" # guarantees that we hit the invalid class id code block
+    mock_get_members.return_value = ClassResult.INVALID_ID # guarantees that we hit the invalid class id code block
     
     response = client.post("/classes/remind/bad_id", headers=trainer_headers)
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
@@ -44,7 +45,7 @@ def test_remind_class_invalid_id(mock_get_members, mock_get_user, client, traine
 @patch(MOCK_GET_CLASS_MEMBERS)
 def test_remind_class_not_found(mock_get_members, mock_get_user, client, trainer_headers): # testing class not found
     mock_get_user.return_value = {"_id": "trainer_id"} # we need to simulate succeful finding of trainer in database
-    mock_get_members.return_value = "class_not_found" # force code into class not found block
+    mock_get_members.return_value = ClassResult.NOT_FOUND # force code into class not found block
     
     response = client.post("/classes/remind/605c3c2f9f1b2c3d4e5f6a7b", headers = trainer_headers)
     assert response.status_code == HTTPStatus.NOT_FOUND
@@ -53,7 +54,7 @@ def test_remind_class_not_found(mock_get_members, mock_get_user, client, trainer
 @patch(MOCK_GET_CLASS_MEMBERS)
 def test_remind_class_wrong_trainer(mock_get_members, mock_get_user, client, trainer_headers): # testing trainer tries to access another trainer's class
     mock_get_user.return_value = {"_id": "trainer_id"}
-    mock_get_members.return_value = "not_your_class"
+    mock_get_members.return_value = ClassResult.NOT_OWNED
     
     response = client.post("/classes/remind/605c3c2f9f1b2c3d4e5f6a7b", headers = trainer_headers)
     
