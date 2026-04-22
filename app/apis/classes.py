@@ -135,7 +135,7 @@ class CreateClass(Resource):
     @api.response(HTTPStatus.FORBIDDEN, FORBIDDEN_ROLE_MESSAGE, create_class_forbidden)
     @api.response(HTTPStatus.BAD_REQUEST, "Failed to create class", create_class_bad_request)
     @api.expect(create_class_model, validate=True)
-    
+        
     def post(self):
         current_user = get_jwt_identity()
 
@@ -207,14 +207,11 @@ class ClassBooking(Resource):
     @api.response(HTTPStatus.FORBIDDEN, "Class full", book_class_class_full)
     @api.response(HTTPStatus.FORBIDDEN, FORBIDDEN_ROLE_MESSAGE, book_class_forbidden)
     @api.response(HTTPStatus.BAD_REQUEST, "Booking failed", book_class_bad_request)
+    
+    @require_roles(TRAINER, MEMBER)
+    
     def post(self, class_id):
         current_user = get_jwt_identity()
-        claims = get_jwt()
-        user_role = claims.get("role")
-        
-        # autherize
-        if user_role not in {"trainer", "member"}:
-            return {MSG: "Only trainers and members allowed"}, HTTPStatus.FORBIDDEN
 
         # get user
         user_resource = UserResource()
@@ -278,13 +275,11 @@ class ClassMembers(Resource):
     @api.response(HTTPStatus.NOT_FOUND, "Class not found", view_members_not_found) # calls appropriate response defined in this file
     @api.response(HTTPStatus.UNPROCESSABLE_ENTITY, "Invalid class id", view_members_invalid_id)
     @api.response(HTTPStatus.FORBIDDEN, "Role not allowed", view_members_forbidden)
+    
+    @require_roles(TRAINER)
+    
     def get(self, class_id):
-        claims = get_jwt()
-        user_role = claims.get("role") # extract user role
-
-        if user_role not in {"trainer"}: # only for trainers
-            return {MSG: "Only trainers allowed"}, HTTPStatus.FORBIDDEN # throw appropriate http response
-
+        
         # get trainer's user ID to verify ownership of the class
         current_user = get_jwt_identity()
         user_resource = UserResource()
