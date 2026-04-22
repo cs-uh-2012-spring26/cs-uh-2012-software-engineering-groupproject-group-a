@@ -121,6 +121,11 @@ class ClassList(Resource):
 @api.route("/create-class")
 
 class CreateClass(Resource):
+    def __init__(self, user_resource=None, class_resource=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user_resource = user_resource if user_resource is not None else UserResource()
+        self.class_resource = class_resource if class_resource is not None else ClassResource()
+
     @jwt_required()
     @require_roles(TRAINER)
     @api.doc(security='Bearer', params={
@@ -169,13 +174,11 @@ class CreateClass(Resource):
             return {MSG: "Invalid date format"}, HTTPStatus.NOT_ACCEPTABLE
 
         # get trainer id from user record if available
-        user_resource = UserResource()
-        user = user_resource.get_user(current_user)
+        user = self.user_resource.get_user(current_user)
         trainer_id = user.get("_id") if isinstance(user, dict) and user.get("_id") else current_user
         assert isinstance(trainer_id, str)
         
-        class_resource = ClassResource()
-        created = class_resource.create_class(
+        created = self.class_resource.create_class(
             class_name=class_name,
             start_date=start_date,
             end_date=end_date,
