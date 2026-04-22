@@ -266,11 +266,11 @@ view_members_forbidden = api.model("ViewMembersForbidden", {
 }) # swagger ui response for unauthorized role
 
 def _members_error_response(result): # handles the various errors we expect to have when getting class members
-    if result == "invalid_class_id":
+    if result in (BookingResult.INVALID_ID, "invalid_class_id"):
         return {MSG: "Invalid class id"}, HTTPStatus.UNPROCESSABLE_ENTITY
-    if result == "class_not_found":
+    if result in (BookingResult.NOT_FOUND, "class_not_found"):
         return {MSG: "Class not found"}, HTTPStatus.NOT_FOUND
-    if result == "not_your_class":
+    if result in (BookingResult.NOT_OWNED, "not_your_class"):
         return {MSG: "Only the trainer of this class can view its members"}, HTTPStatus.FORBIDDEN
     return None
 
@@ -279,25 +279,89 @@ def _get_trainer_id():
     user = UserResource().get_user(current_user)
     return user.get("_id") if isinstance(user, dict) and user.get("_id") else None
 
-@api.route("/<string:class_id>/members") # accessible by going to /classid/members
-class ClassMembers(Resource):
-    @jwt_required() # requires bearer token on swagger to view this (not available to non-trainers)
-    @api.doc(
-        security="Bearer", # need jwt token
-        params={"class_id": "Class ID (Mongo ObjectId string)"},
-        description="View member list of a class (trainers only)" # human readable descrip in swagger
+
+def _prepare_reminder_context(class_id, trainer_id, class_resource):
+    members = class_resource.get_class_members(class_id, trainer_id)
+
+    err = _members_error_response(members)
+    if err:
+        return None, None, err
+
+    if isinstance(members, BookingResult):
+        return None, None, ({MSG: "An error occurred"}, HTTPStatus.BAD_REQUEST)
+
+    class_info = class_resource.get_class_by_id(class_id)
+    class_name_raw = class_info.get("class_name") if isinstance(class_info, dict) else None
+    class_name = class_name_raw if isinstance(class_name_raw, str) and len(class_name_raw) > 0 else "your upcoming class"
+
+    # check that class is not in the past
+    start_date_raw = class_info.get("start_date") if isinstance(class_info, dict) else None
+    if isinstance(start_date_raw, str) and len(start_date_raw) > 0:
+        try:
+            start_dt = datetime.fromisoformat(start_date_raw.replace("Z", "+00:00"))
+            if start_dt < datetime.now(timezone.utc):
+                return None, None, ({MSG: "Cannot send reminders for a class that has already passed"}, HTTPStatus.BAD_REQUEST)
+        except ValueError:
+            return None, None, ({MSG: "Class has an invalid start date format"}, HTTPStatus.BAD_REQUEST)
+
+    return members, class_name, None
+
+
+def _send_reminder_emails(members, class_name, user_resource):
+    sent = 0
+    failed = 0
+    errors = []
+    for member in members:
+        member_user = user_resource.get_user(member)
+        member_email = member_user.get("email") if isinstance(member_user, dict) else None
+
+        if not isinstance(member_email, str) or len(member_email.strip()) == 0:
+            failed += 1
+            errors.append(f"{member}: missing email")
+            continue
+
+        success, error = EmailService.send_class_reminder(member_email, class_name)
+        if success:
+            sent += 1
+        else:
+            failed += 1
+            if isinstance(error, str) and len(error) > 0:
+                errors.append(f"{member_email}: {error}")
+
+    message = (
+        f"All {sent} reminder emails sent successfully"
+        if failed == 0
+        else "Reminder process completed with some failed emails"
     )
-    @api.response(HTTPStatus.OK, "Member list", view_members_success) # types of possible responses
-    @api.response(HTTPStatus.NOT_FOUND, "Class not found", view_members_not_found) # calls appropriate response defined in this file
+
+    response_payload = {
+        MSG: message,
+        "sent": sent,
+        "failed": failed,
+    }
+
+    if len(errors) > 0:
+        response_payload["errors"] = errors
+
+    return response_payload
+
+@api.route("/<string:class_id>/members")
+class ClassMembers(Resource):
+    @jwt_required()
+    @require_roles(TRAINER)
+    @api.doc(
+        security="Bearer",
+        params={"class_id": "Class ID (Mongo ObjectId string)"},
+        description="View member list of a class (trainers only)"
+    )
+    @api.response(HTTPStatus.OK, "Member list", view_members_success) 
+    @api.response(HTTPStatus.NOT_FOUND, "Class not found", view_members_not_found)
     @api.response(HTTPStatus.UNPROCESSABLE_ENTITY, "Invalid class id", view_members_invalid_id)
     @api.response(HTTPStatus.FORBIDDEN, "Role not allowed", view_members_forbidden)
     
-    @require_roles(TRAINER)
-    
     def get(self, class_id):
         
-        # get trainer's user ID to verify ownership of the class
-        trainer_id = _get_trainer_id() # replaced duplicate code with function
+        trainer_id = _get_trainer_id()
 
         class_resource = ClassResource()
         result = class_resource.get_class_members(class_id, trainer_id) # get class members for this class
@@ -308,13 +372,6 @@ class ClassMembers(Resource):
                 ({MSG: "An error occurred"}, HTTPStatus.BAD_REQUEST)
             )
             return response_data, status_code
-        
-        # if result == "invalid_class_id": # handling possible responses of the get_class_members method
-        #     return {MSG: "Invalid class id"}, HTTPStatus.UNPROCESSABLE_ENTITY
-        # if result == "class_not_found":
-        #     return {MSG: "Class not found"}, HTTPStatus.NOT_FOUND
-        # if result == "not_your_class":
-        #     return {MSG: "Only the trainer of this class can view its members"}, HTTPStatus.FORBIDDEN
 
         return {"members": result}, HTTPStatus.OK # otherwise return result, all went well
 
@@ -334,64 +391,16 @@ class ClassReminder(Resource):
     @api.response(HTTPStatus.FORBIDDEN, "Role not allowed", remind_class_forbidden)
     @api.response(HTTPStatus.BAD_REQUEST, "Class is in the past or has invalid date", remind_class_bad_request)
     def post(self, class_id):
-
-        trainer_id = _get_trainer_id() # replaced duplicate code w/ function
+        trainer_id = _get_trainer_id()
         user_resource = UserResource()
-        
         class_resource = ClassResource()
-        members = class_resource.get_class_members(class_id, trainer_id)
 
-        err = _members_error_response(members) # use template error handling function instead of hardcode
-        if (err):
+        members, class_name, err = _prepare_reminder_context(class_id, trainer_id, class_resource)
+        if err:
             return err
 
-        class_info = class_resource.get_class_by_id(class_id)
-        class_name_raw = class_info.get("class_name") if isinstance(class_info, dict) else None
-        class_name = class_name_raw if isinstance(class_name_raw, str) and len(class_name_raw) > 0 else "your upcoming class"
-        
-        # check that class is not in the past
-        start_date_raw = class_info.get("start_date") if isinstance(class_info, dict) else None
-        if isinstance(start_date_raw, str) and len(start_date_raw) > 0:
-            try:
-                start_dt = datetime.fromisoformat(start_date_raw.replace("Z", "+00:00"))
-                if start_dt < datetime.now(timezone.utc):
-                    return {MSG: "Cannot send reminders for a class that has already passed"}, HTTPStatus.BAD_REQUEST
-            except ValueError:
-                return {MSG: "Class has an invalid start date format"}, HTTPStatus.BAD_REQUEST
-        
-        sent = 0
-        failed = 0
-        errors = []
-        for member in members:
-            member_user = user_resource.get_user(member)
-            member_email = member_user.get("email") if isinstance(member_user, dict) else None
+        assert members is not None
+        assert class_name is not None
 
-            if not isinstance(member_email, str) or len(member_email.strip()) == 0:
-                failed += 1
-                errors.append(f"{member}: missing email")
-                continue
-
-            success, error = EmailService.send_class_reminder(member_email, class_name)
-            if success:
-                sent += 1
-            else:
-                failed += 1
-                if isinstance(error, str) and len(error) > 0:
-                    errors.append(f"{member_email}: {error}")
-
-        message = (
-            f"All {sent} reminder emails sent successfully"
-            if failed == 0
-            else "Reminder process completed with some failed emails"
-        )
-
-        response_payload = {
-            MSG: message,
-            "sent": sent,
-            "failed": failed,
-        }
-
-        if len(errors) > 0:
-            response_payload["errors"] = errors
-
+        response_payload = _send_reminder_emails(members, class_name, user_resource)
         return response_payload, HTTPStatus.OK
