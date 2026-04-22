@@ -5,7 +5,7 @@ from http import HTTPStatus
 from datetime import datetime, timezone
 from app.apis import MSG, MEMBER, TRAINER, FORBIDDEN_ROLE_MESSAGE, require_roles
 from app.db.users import UserResource
-from app.db.classes import ClassResource
+from app.db.classes import BOOKING_RESPONSE_MAP, BookingResult, ClassResource
 from app.services.email_service import EmailService
 
 api = Namespace(
@@ -189,8 +189,8 @@ class CreateClass(Resource):
 
         return {MSG: "Failed to create class"}, HTTPStatus.BAD_REQUEST
 
-@api.route("/<string:class_id>/book")
 
+@api.route("/<string:class_id>/book")
 class ClassBooking(Resource):
     @jwt_required()
     @api.doc(
@@ -226,24 +226,29 @@ class ClassBooking(Resource):
         user_id = user.get("_id")
 
         class_resource = ClassResource()
+        outcome = class_resource.book_class(current_user, class_id, user_id)
+
+        response_data, status  = BOOKING_RESPONSE_MAP.get(outcome, ({MSG: "Failed to book class"}, HTTPStatus.BAD_REQUEST))
+        return response_data, status
+
         # save username in member_list, but use user_id for trainer ownership check
-        booking_status = class_resource.book_class(current_user, class_id, user_id)
+        # booking_status = class_resource.book_class(current_user, class_id, user_id)
 
-        if booking_status == "booked":
-            return {MSG: "Class booked successfully"}, HTTPStatus.OK
-        if booking_status == "invalid_class_id":
-            return {MSG: "Invalid class id"}, HTTPStatus.UNPROCESSABLE_ENTITY
-        if booking_status == "class_not_found":
-            return {MSG: "Class not found"}, HTTPStatus.NOT_FOUND
-        if booking_status == "trainer_cannot_book":
-            return {MSG: "Trainer cannot book their own class"}, HTTPStatus.FORBIDDEN
-        if booking_status == "already_booked":
-            return {MSG: "User already booked this class"}, HTTPStatus.CONFLICT
-        if booking_status == "class_full":
-            # using forbidden here to match the existing use-case status mapping
-            return {MSG: "Class is full"}, HTTPStatus.FORBIDDEN
+        # if booking_status == "booked":
+        #     return {MSG: "Class booked successfully"}, HTTPStatus.OK
+        # if booking_status == "invalid_class_id":
+        #     return {MSG: "Invalid class id"}, HTTPStatus.UNPROCESSABLE_ENTITY
+        # if booking_status == "class_not_found":
+        #     return {MSG: "Class not found"}, HTTPStatus.NOT_FOUND
+        # if booking_status == "trainer_cannot_book":
+        #     return {MSG: "Trainer cannot book their own class"}, HTTPStatus.FORBIDDEN
+        # if booking_status == "already_booked":
+        #     return {MSG: "User already booked this class"}, HTTPStatus.CONFLICT
+        # if booking_status == "class_full":
+        #     # using forbidden here to match the existing use-case status mapping
+        #     return {MSG: "Class is full"}, HTTPStatus.FORBIDDEN
 
-        return {MSG: "Failed to book class"}, HTTPStatus.BAD_REQUEST
+        # return {MSG: "Failed to book class"}, HTTPStatus.BAD_REQUEST
 
 view_members_success = api.model("ViewMembersSuccess", {
     "members": fields.List(fields.String, description="List of usernames booked in the class")
@@ -289,12 +294,19 @@ class ClassMembers(Resource):
         class_resource = ClassResource()
         result = class_resource.get_class_members(class_id, trainer_id) # get class members for this class
 
-        if result == "invalid_class_id": # handling possible responses of the get_class_members method
-            return {MSG: "Invalid class id"}, HTTPStatus.UNPROCESSABLE_ENTITY
-        if result == "class_not_found":
-            return {MSG: "Class not found"}, HTTPStatus.NOT_FOUND
-        if result == "not_your_class":
-            return {MSG: "Only the trainer of this class can view its members"}, HTTPStatus.FORBIDDEN
+        if isinstance(result, BookingResult):
+            response_data, status_code = BOOKING_RESPONSE_MAP.get(
+                result, 
+                ({MSG: "An error occurred"}, HTTPStatus.BAD_REQUEST)
+            )
+            return response_data, status_code
+        
+        # if result == "invalid_class_id": # handling possible responses of the get_class_members method
+        #     return {MSG: "Invalid class id"}, HTTPStatus.UNPROCESSABLE_ENTITY
+        # if result == "class_not_found":
+        #     return {MSG: "Class not found"}, HTTPStatus.NOT_FOUND
+        # if result == "not_your_class":
+        #     return {MSG: "Only the trainer of this class can view its members"}, HTTPStatus.FORBIDDEN
 
         return {"members": result}, HTTPStatus.OK # otherwise return result, all went well
 
