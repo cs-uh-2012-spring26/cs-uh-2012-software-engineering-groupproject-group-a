@@ -7,7 +7,7 @@ from enum import Enum
 from http import HTTPStatus
 
 CLASS_COLLECTION = "classes"
-class BookingResult(Enum):
+class ClassResult(Enum):
     SUCCESS = "booked"
     INVALID_ID = "invalid_class_id"
     NOT_FOUND = "class_not_found"
@@ -17,17 +17,19 @@ class BookingResult(Enum):
     FAIL = "booking_failed"
     NOT_OWNED = "not_your_class"
 
-BOOKING_RESPONSE_MAP = {
-    BookingResult.SUCCESS: ({MSG: "Class booked successfully"}, HTTPStatus.OK),
-    BookingResult.INVALID_ID: ({MSG: "Invalid class id"}, HTTPStatus.UNPROCESSABLE_ENTITY),
-    BookingResult.NOT_FOUND: ({MSG: "Class not found"}, HTTPStatus.NOT_FOUND),
-    BookingResult.TRAINER_OWNED: ({MSG: "Trainer cannot book their own class"}, HTTPStatus.FORBIDDEN),
-    BookingResult.ALREADY_BOOKED: ({MSG: "User already booked this class"}, HTTPStatus.CONFLICT),
-    BookingResult.CLASS_FULL: ({MSG: "Class is full"}, HTTPStatus.FORBIDDEN),
-    BookingResult.FAIL: ({MSG: "Failed to book class"}, HTTPStatus.BAD_REQUEST),
-    BookingResult.NOT_OWNED: ({MSG: "Only the trainer of this class can view its members"}, HTTPStatus.FORBIDDEN)
-}
-
+    def resolves(self):
+        mapping = {
+            ClassResult.SUCCESS: ({MSG: "Class booked successfully"}, HTTPStatus.OK),
+            ClassResult.INVALID_ID: ({MSG: "Invalid class id"}, HTTPStatus.UNPROCESSABLE_ENTITY),
+            ClassResult.NOT_FOUND: ({MSG: "Class not found"}, HTTPStatus.NOT_FOUND),
+            ClassResult.TRAINER_OWNED: ({MSG: "Trainer cannot book their own class"}, HTTPStatus.FORBIDDEN),
+            ClassResult.ALREADY_BOOKED: ({MSG: "User already booked this class"}, HTTPStatus.CONFLICT),
+            ClassResult.CLASS_FULL: ({MSG: "Class is full"}, HTTPStatus.FORBIDDEN),
+            ClassResult.FAIL: ({MSG: "Failed to book class"}, HTTPStatus.BAD_REQUEST),
+            ClassResult.NOT_OWNED: ({MSG: "Only the trainer of this class can view its members"}, HTTPStatus.FORBIDDEN)
+        }
+        return mapping.get(self, ({MSG: "Unknown error"}, HTTPStatus.BAD_REQUEST)) 
+                                      
 class ClassResource:
 
     def __init__(self):
@@ -56,11 +58,11 @@ class ClassResource:
         try:
             class_oid = ObjectId(class_id)
         except (InvalidId, TypeError):
-            return BookingResult.INVALID_ID
+            return ClassResult.INVALID_ID
 
         fitness_class = self.collection.find_one({"_id": class_oid})
         if not fitness_class:
-            return BookingResult.NOT_FOUND
+            return ClassResult.NOT_FOUND
 
         return serialize_item(fitness_class)
       
@@ -68,15 +70,15 @@ class ClassResource:
         try:
             class_oid = ObjectId(class_id) # mongodb stores ids as objectid type, try to conver
         except (InvalidId, TypeError):
-            return BookingResult.INVALID_ID # cannot convert to object id type
+            return ClassResult.INVALID_ID # cannot convert to object id type
 
         fitness_class = self.collection.find_one({"_id": class_oid}) # look for the class in the database
         if not fitness_class:
-            return BookingResult.NOT_FOUND
+            return ClassResult.NOT_FOUND
 
         # check that the requesting trainer owns this class
         if requesting_trainer_id is not None and fitness_class.get("trainer_id") != requesting_trainer_id:
-            return BookingResult.NOT_OWNED
+            return ClassResult.NOT_OWNED
 
         return fitness_class.get("member_list", []) # extract member list from
 
@@ -84,29 +86,29 @@ class ClassResource:
         try:
             class_oid = ObjectId(class_id)
         except (InvalidId, TypeError):
-            return BookingResult.INVALID_ID
+            return ClassResult.INVALID_ID
 
         # look for class
         fitness_class = self.collection.find_one({"_id": class_oid})
         
         if not fitness_class:
-            return BookingResult.NOT_FOUND
+            return ClassResult.NOT_FOUND
 
         if user_id is not None and fitness_class.get("trainer_id") == user_id:
-            return BookingResult.TRAINER_OWNED
+            return ClassResult.TRAINER_OWNED
         
         member_list = fitness_class.get("member_list", [])
         if username in member_list:
-            return BookingResult.ALREADY_BOOKED
+            return ClassResult.ALREADY_BOOKED
     
         capacity = fitness_class.get("capacity", 0)
         if len(member_list) >= capacity:
-            return BookingResult.CLASS_FULL
+            return ClassResult.CLASS_FULL
         result = self.collection.update_one(
             {"_id": class_oid},
             {"$push": {"member_list": username}}
         )
         if result.modified_count == 1:
-            return BookingResult.SUCCESS
+            return ClassResult.SUCCESS
         
-        return BookingResult.FAIL
+        return ClassResult.FAIL

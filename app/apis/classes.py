@@ -5,7 +5,7 @@ from http import HTTPStatus
 from datetime import datetime, timezone
 from app.apis import MSG, MEMBER, TRAINER, FORBIDDEN_ROLE_MESSAGE, are_non_empty_strings, require_roles
 from app.db.users import UserResource
-from app.db.classes import BOOKING_RESPONSE_MAP, BookingResult, ClassResource
+from app.db.classes import ClassResult, ClassResource
 from app.services.email_service import EmailService
 
 api = Namespace(
@@ -215,39 +215,18 @@ class ClassBooking(Resource):
     def post(self, class_id):
         current_user = get_jwt_identity()
 
-        # get user
         user_resource = UserResource()
         user = user_resource.get_user(current_user)
         if not isinstance(user, dict) or not user.get("_id"):
             return {MSG: "User not found"}, HTTPStatus.NOT_FOUND
-
 
         user_id = user.get("_id")
 
         class_resource = ClassResource()
         outcome = class_resource.book_class(current_user, class_id, user_id)
 
-        response_data, status  = BOOKING_RESPONSE_MAP.get(outcome, ({MSG: "Failed to book class"}, HTTPStatus.BAD_REQUEST))
-        return response_data, status
-
-        # save username in member_list, but use user_id for trainer ownership check
-        # booking_status = class_resource.book_class(current_user, class_id, user_id)
-
-        # if booking_status == "booked":
-        #     return {MSG: "Class booked successfully"}, HTTPStatus.OK
-        # if booking_status == "invalid_class_id":
-        #     return {MSG: "Invalid class id"}, HTTPStatus.UNPROCESSABLE_ENTITY
-        # if booking_status == "class_not_found":
-        #     return {MSG: "Class not found"}, HTTPStatus.NOT_FOUND
-        # if booking_status == "trainer_cannot_book":
-        #     return {MSG: "Trainer cannot book their own class"}, HTTPStatus.FORBIDDEN
-        # if booking_status == "already_booked":
-        #     return {MSG: "User already booked this class"}, HTTPStatus.CONFLICT
-        # if booking_status == "class_full":
-        #     # using forbidden here to match the existing use-case status mapping
-        #     return {MSG: "Class is full"}, HTTPStatus.FORBIDDEN
-
-        # return {MSG: "Failed to book class"}, HTTPStatus.BAD_REQUEST
+        if isinstance(outcome, ClassResult):
+            return outcome.resolves()
 
 view_members_success = api.model("ViewMembersSuccess", {
     "members": fields.List(fields.String, description="List of usernames booked in the class")
@@ -265,14 +244,15 @@ view_members_forbidden = api.model("ViewMembersForbidden", {
     MSG: fields.String(example="Only the trainer of this class can view its members")
 }) # swagger ui response for unauthorized role
 
-def _members_error_response(result): # handles the various errors we expect to have when getting class members
-    if result in (BookingResult.INVALID_ID, "invalid_class_id"):
-        return {MSG: "Invalid class id"}, HTTPStatus.UNPROCESSABLE_ENTITY
-    if result in (BookingResult.NOT_FOUND, "class_not_found"):
-        return {MSG: "Class not found"}, HTTPStatus.NOT_FOUND
-    if result in (BookingResult.NOT_OWNED, "not_your_class"):
-        return {MSG: "Only the trainer of this class can view its members"}, HTTPStatus.FORBIDDEN
-    return None
+
+# def _members_error_response(result): # handles the various errors we expect to have when getting class members
+#     if result in (BookingResult.INVALID_ID, "invalid_class_id"):
+#         return {MSG: "Invalid class id"}, HTTPStatus.UNPROCESSABLE_ENTITY
+#     if result in (BookingResult.NOT_FOUND, "class_not_found"):
+#         return {MSG: "Class not found"}, HTTPStatus.NOT_FOUND
+#     if result in (BookingResult.NOT_OWNED, "not_your_class"):
+#         return {MSG: "Only the trainer of this class can view its members"}, HTTPStatus.FORBIDDEN
+#     return None
 
 def _get_trainer_id():
     current_user = get_jwt_identity()
@@ -283,12 +263,11 @@ def _get_trainer_id():
 def _prepare_reminder_context(class_id, trainer_id, class_resource):
     members = class_resource.get_class_members(class_id, trainer_id)
 
-    err = _members_error_response(members)
-    if err:
-        return None, None, err
-
-    if isinstance(members, BookingResult):
-        return None, None, ({MSG: "An error occurred"}, HTTPStatus.BAD_REQUEST)
+    if isinstance(members, ClassResult):
+        if members == ClassResult.NOT_OWNED:
+            return None, None, ({MSG: "Only the trainer of this class can send reminders"}, HTTPStatus.FORBIDDEN)
+        
+        return None, None, members.resolves()
 
     class_info = class_resource.get_class_by_id(class_id)
     class_name_raw = class_info.get("class_name") if isinstance(class_info, dict) else None
@@ -366,12 +345,15 @@ class ClassMembers(Resource):
         class_resource = ClassResource()
         result = class_resource.get_class_members(class_id, trainer_id) # get class members for this class
 
-        if isinstance(result, BookingResult):
-            response_data, status_code = BOOKING_RESPONSE_MAP.get(
-                result, 
-                ({MSG: "An error occurred"}, HTTPStatus.BAD_REQUEST)
-            )
-            return response_data, status_code
+        if isinstance(result, ClassResult):
+            return result.resolves()
+        
+        # if isinstance(result, BookingResult):
+        #     response_data, status_code = BOOKING_RESPONSE_MAP.get(
+        #         result, 
+        #         ({MSG: "An error occurred"}, HTTPStatus.BAD_REQUEST)
+        #     )
+        #     return response_data, status_code
 
         return {"members": result}, HTTPStatus.OK # otherwise return result, all went well
 

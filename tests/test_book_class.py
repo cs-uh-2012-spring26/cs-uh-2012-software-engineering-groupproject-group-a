@@ -85,9 +85,10 @@ def test_book_class_user_not_found_returns_404(client, member_headers, seeded_cl
 
 def test_book_class_failed_returns_400(client, member_headers, seeded_class, seeded_member, monkeypatch):
 	from app.apis import classes as classes_api
+	from app.db.classes import ClassResult
 
 	def fake_book_class(self, username, class_id, user_id):
-		return "booking_failed"
+		return ClassResult.FAIL
 
 	monkeypatch.setattr(classes_api.ClassResource, "book_class", fake_book_class)
 
