@@ -258,6 +258,20 @@ view_members_forbidden = api.model("ViewMembersForbidden", {
     MSG: fields.String(example="Only the trainer of this class can view its members")
 }) # swagger ui response for unauthorized role
 
+def _members_error_response(result): # handles the various errors we expect to have when getting class members
+    if result == "invalid_class_id":
+        return {MSG: "Invalid class id"}, HTTPStatus.UNPROCESSABLE_ENTITY
+    if result == "class_not_found":
+        return {MSG: "Class not found"}, HTTPStatus.NOT_FOUND
+    if result == "not_your_class":
+        return {MSG: "Only the trainer of this class can view its members"}, HTTPStatus.FORBIDDEN
+    return None
+
+def _get_trainer_id():
+    current_user = get_jwt_identity()
+    user = UserResource().get_user(current_user)
+    return user.get("_id") if isinstance(user, dict) and user.get("_id") else None
+
 @api.route("/<string:class_id>/members") # accessible by going to /classid/members
 class ClassMembers(Resource):
     @jwt_required() # requires bearer token on swagger to view this (not available to non-trainers)
@@ -276,21 +290,15 @@ class ClassMembers(Resource):
     def get(self, class_id):
         
         # get trainer's user ID to verify ownership of the class
-        current_user = get_jwt_identity()
-        user_resource = UserResource()
-        user = user_resource.get_user(current_user)
-        trainer_id = user.get("_id") if isinstance(user, dict) and user.get("_id") else None
+        trainer_id = _get_trainer_id() # replaced duplicate code with function
 
         class_resource = ClassResource()
         result = class_resource.get_class_members(class_id, trainer_id) # get class members for this class
 
-        if result == "invalid_class_id": # handling possible responses of the get_class_members method
-            return {MSG: "Invalid class id"}, HTTPStatus.UNPROCESSABLE_ENTITY
-        if result == "class_not_found":
-            return {MSG: "Class not found"}, HTTPStatus.NOT_FOUND
-        if result == "not_your_class":
-            return {MSG: "Only the trainer of this class can view its members"}, HTTPStatus.FORBIDDEN
-
+        err = _members_error_response(result) # use template error handling function instead of hardcode
+        if (err):
+            return err
+        
         return {"members": result}, HTTPStatus.OK # otherwise return result, all went well
 
 
@@ -310,20 +318,15 @@ class ClassReminder(Resource):
     @api.response(HTTPStatus.BAD_REQUEST, "Class is in the past or has invalid date", remind_class_bad_request)
     def post(self, class_id):
 
-        current_user = get_jwt_identity()
+        trainer_id = _get_trainer_id() # replaced duplicate code w/ function
         user_resource = UserResource()
-        user = user_resource.get_user(current_user)
-        trainer_id = user.get("_id") if isinstance(user, dict) and user.get("_id") else None
-
+        
         class_resource = ClassResource()
         members = class_resource.get_class_members(class_id, trainer_id)
 
-        if members == "invalid_class_id":
-            return {MSG: "Invalid class id"}, HTTPStatus.UNPROCESSABLE_ENTITY
-        if members == "class_not_found":
-            return {MSG: "Class not found"}, HTTPStatus.NOT_FOUND
-        if members == "not_your_class":
-            return {MSG: "Only the trainer of this class can send reminders"}, HTTPStatus.FORBIDDEN
+        err = _members_error_response(members) # use template error handling function instead of hardcode
+        if (err):
+            return err
 
         class_info = class_resource.get_class_by_id(class_id)
         class_name_raw = class_info.get("class_name") if isinstance(class_info, dict) else None

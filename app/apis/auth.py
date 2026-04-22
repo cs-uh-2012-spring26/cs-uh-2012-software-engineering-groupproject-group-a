@@ -82,8 +82,6 @@ class Register(Resource):
             and len(password) > 0
             and isinstance(full_name, str)
             and len(full_name) > 0
-            and isinstance(password, str)
-            and len(password) > 0
         ):
             return {
                 MSG: "Invalid value provided for one of the fields"
