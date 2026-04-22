@@ -3,7 +3,7 @@ from flask import request
 from flask_jwt_extended import create_access_token
 import datetime
 from http import HTTPStatus
-from app.apis import MSG
+from app.apis import MSG, are_non_empty_strings
 from app.db.users import UserResource
 
 api = Namespace(
@@ -73,16 +73,7 @@ class Register(Resource):
         full_name = request.json.get("full_name")
         trainer_code = request.json.get("trainer_code")
         
-        if not (
-            isinstance(username, str)
-            and len(username) > 0
-            and isinstance(email, str)
-            and len(email) > 0
-            and isinstance(password, str)
-            and len(password) > 0
-            and isinstance(full_name, str)
-            and len(full_name) > 0
-        ):
+        if not are_non_empty_strings(username, email, password, full_name):
             return {
                 MSG: "Invalid value provided for one of the fields"
             }, HTTPStatus.NOT_ACCEPTABLE
@@ -140,12 +131,7 @@ class Login(Resource):
         username = request.json.get("username")
         password = request.json.get("password")
 
-        if not (
-            isinstance(username, str)
-            and len(username) > 0
-            and isinstance(password, str)
-            and len(password) > 0
-        ):
+        if not are_non_empty_strings(username, password):
             return {
                 MSG: "Invalid value provided for one of the fields"
             }, HTTPStatus.NOT_ACCEPTABLE

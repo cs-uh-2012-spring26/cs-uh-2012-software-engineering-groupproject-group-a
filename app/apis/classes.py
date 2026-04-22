@@ -3,7 +3,7 @@ from flask import request
 from flask_jwt_extended import get_jwt, get_jwt_identity, jwt_required
 from http import HTTPStatus
 from datetime import datetime, timezone
-from app.apis import MSG, MEMBER, TRAINER, FORBIDDEN_ROLE_MESSAGE, require_roles
+from app.apis import MSG, MEMBER, TRAINER, FORBIDDEN_ROLE_MESSAGE, are_non_empty_strings, require_roles
 from app.db.users import UserResource
 from app.db.classes import BOOKING_RESPONSE_MAP, BookingResult, ClassResource
 from app.services.email_service import EmailService
@@ -155,10 +155,7 @@ class CreateClass(Resource):
         capacity = request.json.get("capacity")
 
         if not (
-            isinstance(class_name, str) and len(class_name) > 0
-            and isinstance(start_date, str) and len(start_date) > 0
-            and isinstance(end_date, str) and len(end_date) > 0
-            and isinstance(location, str) and len(location) > 0
+            are_non_empty_strings(class_name, start_date, end_date, location)
             and isinstance(capacity, int) and capacity > 0
         ):
             return {MSG: "Invalid value provided for one of the fields"}, HTTPStatus.NOT_ACCEPTABLE
