@@ -80,7 +80,7 @@ class ClassResource:
 
         return fitness_class.get("member_list", []) # extract member list from
 
-    def book_class(self, username: str, class_id: str, user_id: str | None = None) -> str:
+    def book_class(self, username: str, class_id: str, user_id: str | None = None):
         try:
             class_oid = ObjectId(class_id)
         except (InvalidId, TypeError):

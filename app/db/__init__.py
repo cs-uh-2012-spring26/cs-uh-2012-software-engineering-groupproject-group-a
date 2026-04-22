@@ -1,6 +1,7 @@
 from mongomock import MongoClient as mongomockClient
 from pymongo import MongoClient as pyMongoClient
-from pymongo.database import Collection, Database
+from pymongo.database import Database
+from pymongo.synchronous.collection import Collection
 
 TRAINERCODES = [
     "TRAINER123",
