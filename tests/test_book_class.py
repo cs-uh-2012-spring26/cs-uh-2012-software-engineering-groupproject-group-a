@@ -66,7 +66,7 @@ def test_forbidden_role_cannot_book_class(client, invalid_role_headers):
 	response = client.post("/classes/000000000000000000000000/book", headers=invalid_role_headers)
 
 	assert response.status_code == 403
-	assert response.get_json()["message"] == "Only trainers and members allowed"
+	assert response.get_json()["message"] == "Current role is not allowed to access this resource"
 
 
 def test_book_class_user_not_found_returns_404(client, member_headers, seeded_class, monkeypatch):
