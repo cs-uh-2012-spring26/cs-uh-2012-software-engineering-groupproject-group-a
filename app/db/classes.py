@@ -1,9 +1,32 @@
+from app.apis import MSG
 from app.db.utils import serialize_item, serialize_items
 from app.db import DB
 from bson import ObjectId
 from bson.errors import InvalidId
+from enum import Enum
+from http import HTTPStatus
 
 CLASS_COLLECTION = "classes"
+class BookingResult(Enum):
+    SUCCESS = "booked"
+    INVALID_ID = "invalid_class_id"
+    NOT_FOUND = "class_not_found"
+    TRAINER_OWNED = "trainer_cannot_book"
+    ALREADY_BOOKED = "already_booked"
+    CLASS_FULL = "class_full"
+    FAIL = "booking_failed"
+    NOT_OWNED = "not_your_class"
+
+BOOKING_RESPONSE_MAP = {
+    BookingResult.SUCCESS: ({MSG: "Class booked successfully"}, HTTPStatus.OK),
+    BookingResult.INVALID_ID: ({MSG: "Invalid class id"}, HTTPStatus.UNPROCESSABLE_ENTITY),
+    BookingResult.NOT_FOUND: ({MSG: "Class not found"}, HTTPStatus.NOT_FOUND),
+    BookingResult.TRAINER_OWNED: ({MSG: "Trainer cannot book their own class"}, HTTPStatus.FORBIDDEN),
+    BookingResult.ALREADY_BOOKED: ({MSG: "User already booked this class"}, HTTPStatus.CONFLICT),
+    BookingResult.CLASS_FULL: ({MSG: "Class is full"}, HTTPStatus.FORBIDDEN),
+    BookingResult.FAIL: ({MSG: "Failed to book class"}, HTTPStatus.BAD_REQUEST),
+    BookingResult.NOT_OWNED: ({MSG: "Only the trainer of this class can view its members"}, HTTPStatus.FORBIDDEN)
+}
 
 class ClassResource:
 
@@ -33,11 +56,11 @@ class ClassResource:
         try:
             class_oid = ObjectId(class_id)
         except (InvalidId, TypeError):
-            return "invalid_class_id"
+            return BookingResult.INVALID_ID
 
         fitness_class = self.collection.find_one({"_id": class_oid})
         if not fitness_class:
-            return "class_not_found"
+            return BookingResult.NOT_FOUND
 
         return serialize_item(fitness_class)
       
@@ -45,15 +68,15 @@ class ClassResource:
         try:
             class_oid = ObjectId(class_id) # mongodb stores ids as objectid type, try to conver
         except (InvalidId, TypeError):
-            return "invalid_class_id" # cannot convert to object id type
+            return BookingResult.INVALID_ID # cannot convert to object id type
 
         fitness_class = self.collection.find_one({"_id": class_oid}) # look for the class in the database
         if not fitness_class:
-            return "class_not_found"
+            return BookingResult.NOT_FOUND
 
         # check that the requesting trainer owns this class
         if requesting_trainer_id is not None and fitness_class.get("trainer_id") != requesting_trainer_id:
-            return "not_your_class"
+            return BookingResult.NOT_OWNED
 
         return fitness_class.get("member_list", []) # extract member list from
 
@@ -61,34 +84,29 @@ class ClassResource:
         try:
             class_oid = ObjectId(class_id)
         except (InvalidId, TypeError):
-            return "invalid_class_id"
+            return BookingResult.INVALID_ID
 
         # look for class
         fitness_class = self.collection.find_one({"_id": class_oid})
         
         if not fitness_class:
-            return "class_not_found"
+            return BookingResult.NOT_FOUND
 
         if user_id is not None and fitness_class.get("trainer_id") == user_id:
-            return "trainer_cannot_book"
-
-        # get member list of the class
+            return BookingResult.TRAINER_OWNED
+        
         member_list = fitness_class.get("member_list", [])
-        # conflict
         if username in member_list:
-            return "already_booked"
-
-        # block new bookings once the class reached max capacity
+            return BookingResult.ALREADY_BOOKED
+    
         capacity = fitness_class.get("capacity", 0)
         if len(member_list) >= capacity:
-            return "class_full"
-
-        # if not in list, push to it
+            return BookingResult.CLASS_FULL
         result = self.collection.update_one(
             {"_id": class_oid},
-            {"$push": {"member_list": username}},
+            {"$push": {"member_list": username}}
         )
-        # check if update worked
         if result.modified_count == 1:
-            return "booked"
-        return "booking_failed"
+            return BookingResult.SUCCESS
+        
+        return BookingResult.FAIL
