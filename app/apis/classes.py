@@ -122,6 +122,28 @@ class ClassList(Resource):
         classes = class_resource.get_all_classes() # use function defined in db/classes.py
         return {"classes": classes}, HTTPStatus.OK
 
+class SingleClassStrategy:
+    def create(self, class_resource, class_name, start_date, end_date, location, capacity, trainer_id, **kwargs): # kwards needed to receive recurrence_type and recurrence_count without using them
+        # ideas is that we can call both single and recurring class strategies with the same arguments
+        result = class_resource.create_class(
+            class_name=class_name, start_date=start_date, end_date=end_date,
+            location=location, capacity=capacity, trainer_id=trainer_id,
+        )
+        if result:
+            return {MSG: "Class created successfully", "class_id": result.get("_id")}, HTTPStatus.CREATED
+        return {MSG: "Failed to create class"}, HTTPStatus.BAD_REQUEST
+
+class RecurringClassStrategy:
+    def create(self, class_resource, class_name, start_date, end_date, location, capacity, trainer_id, recurrence_type, recurrence_count, **kwargs):
+        created, group_id = class_resource.create_recurring_classes(
+            class_name=class_name, start_date=start_date, end_date=end_date,
+            location=location, capacity=capacity, trainer_id=trainer_id,
+            recurrence_type=recurrence_type, recurrence_count=recurrence_count,
+        )
+        if created:
+            return {MSG: "Recurring classes created successfully", "group_id": group_id, "classes_created": len(created)}, HTTPStatus.CREATED
+        return {MSG: "Failed to create classes"}, HTTPStatus.BAD_REQUEST
+
 @api.route("/create-class")
 
 class CreateClass(Resource):
@@ -189,41 +211,20 @@ class CreateClass(Resource):
 
         # check if class is recurring or not
         if is_recurring:
-            # this is how i envisioned the endpoint, but you can design it as you like
-
-            # create a unique group recurrence id (uuid) and save it 
-
-            # recurrence_group_id = str(uuid.uuid4())
-
-            # create a loop that loops over recurrence_count, save the uuid in all the classes as the recurrence_group_id
-            # #do all the necessary checks  like:
-
-            if recurrence_type not in ["daily", "weekly", "monthly"]:
-                return {MSG: "recurrence_type must be daily or weekly"}, HTTPStatus.NOT_ACCEPTABLE
-
-            if not isinstance(recurrence_count, int) or recurrence_count <= 0:
+            if recurrence_type not in ["daily", "weekly", "monthly"]: # must be one of these options
+                return {MSG: "recurrence_type must be daily, weekly, or monthly"}, HTTPStatus.NOT_ACCEPTABLE
+            if not isinstance(recurrence_count, int) or recurrence_count <= 0: # recurrence count must be positive integer
                 return {MSG: "recurrence_count must be a positive integer"}, HTTPStatus.NOT_ACCEPTABLE
-
-            if created:
-                return {MSG: "Class created successfully", "class_id": created.get("recurring_class_id")}, HTTPStatus.CREATED
-
-            return {MSG: "Failed to create class"}, HTTPStatus.BAD_REQUEST
-
-        else:    
-            created = self.class_resource.create_class(
-                class_name=class_name,
-                start_date=start_date,
-                end_date=end_date,
-                location=location,
-                capacity=capacity,
-                trainer_id=trainer_id,
-            )
-
-            if created:
-                return {MSG: "Class created successfully", "class_id": created.get("_id")}, HTTPStatus.CREATED
-
-            return {MSG: "Failed to create class"}, HTTPStatus.BAD_REQUEST
-
+            strategy = RecurringClassStrategy()
+            
+        else:
+            strategy = SingleClassStrategy()
+            
+        return strategy.create(self.class_resource, class_name=class_name, start_date=start_date,
+                                    end_date=end_date, location=location, capacity=capacity,
+                                    trainer_id=trainer_id, recurrence_type=recurrence_type,
+                                    recurrence_count=recurrence_count,
+                                    ) # we can use the same input regardless on whether it is single class or recurring
 
 @api.route("/<string:class_id>/book")
 class ClassBooking(Resource):
