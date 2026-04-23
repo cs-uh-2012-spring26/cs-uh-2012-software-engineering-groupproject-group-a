@@ -5,6 +5,10 @@ from flask_jwt_extended import JWTManager
 from flask_jwt_extended.exceptions import NoAuthorizationError, InvalidHeaderError
 from jwt.exceptions import ExpiredSignatureError, DecodeError, InvalidTokenError
 
+DAILY = "daily" # constants for recurring classes
+WEEKLY = "weekly"
+MONTHLY = "monthly"
+
 def create_app():
     from app.config import Config
     from app.apis.auth import api as auth_ns
