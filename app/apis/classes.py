@@ -1,5 +1,3 @@
-from abc import ABC, abstractmethod
-
 from flask_restx import Namespace, Resource, fields
 import uuid
 from flask import request
@@ -10,7 +8,7 @@ from app import DAILY, WEEKLY, MONTHLY
 from app.apis import MSG, MEMBER, TRAINER, FORBIDDEN_ROLE_MESSAGE, are_non_empty_strings, require_roles
 from app.db.users import UserResource
 from app.db.classes import ClassResult, ClassResource
-from app.services.email_service import EmailService
+from app.services.notification_service import EmailNotification, send_email_reminders
 
 api = Namespace(
     "classes", description="API endpoints for class viewing and creation"
@@ -323,44 +321,6 @@ def _prepare_reminder_context(class_id, trainer_id, class_resource):
     return members, class_name, None
 
 
-def _send_reminder_emails(members, class_name, user_resource):
-    sent = 0
-    failed = 0
-    errors = []
-    for member in members:
-        member_user = user_resource.get_user(member)
-        member_email = member_user.get("email") if isinstance(member_user, dict) else None
-
-        if not isinstance(member_email, str) or len(member_email.strip()) == 0:
-            failed += 1
-            errors.append(f"{member}: missing email")
-            continue
-
-        success, error = EmailService.send_class_reminder(member_email, class_name)
-        if success:
-            sent += 1
-        else:
-            failed += 1
-            if isinstance(error, str) and len(error) > 0:
-                errors.append(f"{member_email}: {error}")
-
-    message = (
-        f"All {sent} reminder emails sent successfully"
-        if failed == 0
-        else "Reminder process completed with some failed emails"
-    )
-
-    response_payload = {
-        MSG: message,
-        "sent": sent,
-        "failed": failed,
-    }
-
-    if len(errors) > 0:
-        response_payload["errors"] = errors
-
-    return response_payload
-
 @api.route("/<string:class_id>/members")
 class ClassMembers(Resource):
     @jwt_required()
@@ -394,31 +354,6 @@ class ClassMembers(Resource):
 
         return {"members": result}, HTTPStatus.OK # otherwise return result, all went well
     
-#########################################################################
-class NotificationStrategy(ABC):
-    @abstractmethod
-    def send(self, user_data, message_body):
-        pass
-
-class EmailNotification(NotificationStrategy):
-    def send(self, user_data, message_body):
-        pass
-
-class TelegramNotification(NotificationStrategy):
-    def send(self, user_data, message_body):
-        pass
-
-class NotificationEngine:
-    def __init__(self, strategies=None):
-        self._strategies = strategies or []
-
-    def broadcast(self, user_data, message):
-        results = []
-        for strategy in self._strategies:
-            success, error = strategy.send(user_data, message)
-            results.append({"method": strategy.__class__.__name__, "success": success, "error": error})
-        return results
-##############################################################################
 
 @api.route("/remind/<string:class_id>")
 class ClassReminder(Resource):
@@ -446,20 +381,12 @@ class ClassReminder(Resource):
         assert members is not None
         assert class_name is not None
 
-        # response_payload = _send_reminder_emails(members, class_name, user_resource)
-        # return response_payload, HTTPStatus.OK
-        
-        active_strategies = [
-            EmailNotification(),
-            TelegramNotification()
-        ]
-        
-        engine = NotificationEngine(active_strategies)
-        
-        total_sent = 0
-        for member_id in members:
-            user = user_resource.get_user(member_id)
-            engine.broadcast(user, f"Your class {class_name} starts soon!")
-            total_sent += 1
+        notification_strategies = [EmailNotification()]
 
-        return {MSG: "Reminders processed", "count": total_sent}, HTTPStatus.OK
+        response_payload = send_email_reminders(
+            members,
+            class_name,
+            user_resource,
+            strategies=notification_strategies,
+        )
+        return response_payload, HTTPStatus.OK

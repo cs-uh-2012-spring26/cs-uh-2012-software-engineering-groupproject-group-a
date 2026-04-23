@@ -9,7 +9,7 @@ from http import HTTPStatus
 MOCK_GET_USER = "app.apis.classes.UserResource.get_user"
 MOCK_GET_CLASS_MEMBERS = "app.apis.classes.ClassResource.get_class_members"
 MOCK_GET_CLASS_BY_ID = "app.apis.classes.ClassResource.get_class_by_id"
-MOCK_SEND_CLASS_REMINDER = "app.apis.classes.EmailService.send_class_reminder"
+MOCK_SEND_CLASS_REMINDER = "app.services.notification_service.EmailService.send_class_reminder"
 
 # for mocking idfferent types of users in Userresource.get_user
 def user_side_effect_helper(user_id):
