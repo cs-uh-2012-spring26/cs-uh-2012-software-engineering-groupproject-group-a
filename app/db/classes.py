@@ -1,3 +1,4 @@
+from app import DAILY, WEEKLY, MONTHLY
 from app.apis import MSG
 from app.db.utils import serialize_item, serialize_items
 from app.db import DB
@@ -121,7 +122,7 @@ class ClassResource:
     def create_recurring_classes(self, class_name, start_date,
                                 end_date, location, capacity, trainer_id,
                                 recurrence_type, recurrence_count):
-        delta = {"daily": timedelta(days=1), "weekly": timedelta(weeks=1), "monthly": timedelta(days=30)}[recurrence_type] # dictionary of how much time to shift wach occurence
+        delta = {DAILY: timedelta(days=1), WEEKLY: timedelta(weeks=1), MONTHLY: timedelta(days=30)}[recurrence_type] # dictionary of how much time to shift wach occurence
         group_id = str(uuid.uuid4()) # unique id shared by all occurences of this class
         start_dt = datetime.strptime(start_date, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc) # convert to actual datetime objects
         end_dt = datetime.strptime(end_date, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)

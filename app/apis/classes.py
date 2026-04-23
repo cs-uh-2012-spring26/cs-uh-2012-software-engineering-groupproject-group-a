@@ -4,6 +4,7 @@ from flask import request
 from flask_jwt_extended import get_jwt, get_jwt_identity, jwt_required
 from http import HTTPStatus
 from datetime import datetime, timezone
+from app import DAILY, WEEKLY, MONTHLY
 from app.apis import MSG, MEMBER, TRAINER, FORBIDDEN_ROLE_MESSAGE, are_non_empty_strings, require_roles
 from app.db.users import UserResource
 from app.db.classes import ClassResult, ClassResource
@@ -211,7 +212,7 @@ class CreateClass(Resource):
 
         # check if class is recurring or not
         if is_recurring:
-            if recurrence_type not in ["daily", "weekly", "monthly"]: # must be one of these options
+            if recurrence_type not in [DAILY, WEEKLY, MONTHLY]:
                 return {MSG: "recurrence_type must be daily, weekly, or monthly"}, HTTPStatus.NOT_ACCEPTABLE
             if not isinstance(recurrence_count, int) or recurrence_count <= 0: # recurrence count must be positive integer
                 return {MSG: "recurrence_count must be a positive integer"}, HTTPStatus.NOT_ACCEPTABLE
