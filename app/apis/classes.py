@@ -8,7 +8,7 @@ from app import DAILY, WEEKLY, MONTHLY
 from app.apis import MSG, MEMBER, TRAINER, FORBIDDEN_ROLE_MESSAGE, are_non_empty_strings, require_roles
 from app.db.users import UserResource
 from app.db.classes import ClassResult, ClassResource
-from app.services.notification_service import EmailNotification, send_email_reminders
+from app.services.notification_service import EmailNotification, TelegramNotification, send_reminders
 
 api = Namespace(
     "classes", description="API endpoints for class viewing and creation"
@@ -381,9 +381,9 @@ class ClassReminder(Resource):
         assert members is not None
         assert class_name is not None
 
-        notification_strategies = [EmailNotification()]
+        notification_strategies = [EmailNotification(), TelegramNotification()]
 
-        response_payload = send_email_reminders(
+        response_payload = send_reminders(
             members,
             class_name,
             user_resource,

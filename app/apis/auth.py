@@ -5,6 +5,7 @@ import datetime
 from http import HTTPStatus
 from app.apis import MSG, are_non_empty_strings
 from app.db.users import UserResource
+from app.services.telegram_service import TelegramService
 
 api = Namespace(
     "auth", description="API endpoints for authentication"
@@ -89,16 +90,19 @@ class Register(Resource):
         if existing_email:
             return {MSG: "Email already exists"}, HTTPStatus.BAD_REQUEST
         
-        success = user_resource.create_user(
+        registered_user, telegram_link = user_resource.create_user(
             username=username,
             email=email,
             password=password,
             full_name=full_name,
             trainer_code= trainer_code if trainer_code else None
         )
-        
-        if success:
-            return {MSG: "User registered successfully"}, HTTPStatus.CREATED
+
+        if registered_user:
+            return {
+                MSG: "User registered successfully",
+                "telegram_connect_link": telegram_link
+                    }, HTTPStatus.CREATED
         
         return {MSG: "Registration failed"}, HTTPStatus.BAD_REQUEST
 
@@ -137,13 +141,23 @@ class Login(Resource):
             }, HTTPStatus.NOT_ACCEPTABLE
 
         user_resource = UserResource()
+        telegram_service = TelegramService()
 
         if user_resource.check_password(username, password):
 
             # get role for token
             user = user_resource.get_user(username)
             assert isinstance(user, dict)
-            
+
+            telegram_token = user_resource.get_user_telegram_token(username)
+            print(telegram_token)
+            if telegram_token:
+                chat_id = telegram_service.get_user_chat_id(telegram_token)
+                print(chat_id)
+                if chat_id:
+                    user_resource.append_telegram_chat_id(username, chat_id)
+                    print("appended?")
+
             access_token = create_access_token(
                 identity=username,
                 additional_claims={

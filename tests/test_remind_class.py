@@ -114,7 +114,10 @@ def test_remind_class_success(mock_get_user, mock_get_members, mock_get_class_by
     response = client.post("/classes/remind/valid_id_here", headers = trainer_headers)
     
     assert response.status_code == HTTPStatus.OK
-    assert response.json["sent"] == 2 # we should have sent out email to 2 people
+    assert response.json["email_results"]["success"] == 2
+    assert response.json["email_results"]["fail"] == 0
+    assert response.json["telegram_results"]["success"] == 0
+    assert response.json["telegram_results"]["fail"] == 2
     
 @patch(MOCK_SEND_CLASS_REMINDER)
 @patch(MOCK_GET_CLASS_BY_ID)
@@ -130,7 +133,10 @@ def test_remind_class_missing_user_emails(mock_get_user, mock_get_members, mock_
     response = client.post("/classes/remind/valid_id_here", headers = trainer_headers)
     
     assert response.status_code == HTTPStatus.OK
-    assert response.json["failed"] == 2
+    assert response.json["email_results"]["success"] == 0
+    assert response.json["email_results"]["fail"] == 2
+    assert response.json["telegram_results"]["success"] == 0
+    assert response.json["telegram_results"]["fail"] == 2
     
 @patch(MOCK_SEND_CLASS_REMINDER)
 @patch(MOCK_GET_CLASS_BY_ID)

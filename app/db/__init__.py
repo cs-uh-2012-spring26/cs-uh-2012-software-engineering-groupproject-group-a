@@ -2,6 +2,13 @@ from mongomock import MongoClient as mongomockClient
 from pymongo import MongoClient as pyMongoClient
 from pymongo.database import Database
 from pymongo.synchronous.collection import Collection
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_BOT_USERNAME = os.getenv("TELEGRAM_BOT_USERNAME")
 
 TRAINERCODES = [
     "TRAINER123",
