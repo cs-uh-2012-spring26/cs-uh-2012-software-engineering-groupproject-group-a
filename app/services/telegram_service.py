@@ -5,10 +5,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-TELEGRAM_BOT_USERNAME = os.getenv("TELEGRAM_BOT_USERNAME")
 TELEGRAM_API = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
 
-class TelegramService():
+class TelegramService:
     @staticmethod
     def get_user_chat_id(user_token: str):
         resp = requests.get(
@@ -19,7 +18,6 @@ class TelegramService():
         resp.raise_for_status()
 
         data = resp.json()
-        print(data)
         if not data.get("ok"):
             return None
 
@@ -34,3 +32,21 @@ class TelegramService():
                     return str(chat_id)
 
         return None
+    
+    @staticmethod
+    def send_telegram_message(chat_id: str, text: str):
+        resp = requests.post(
+            f"{TELEGRAM_API}/sendMessage",
+            json={
+                "chat_id": chat_id,
+                "text": text,
+            },
+            timeout=10,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+
+        if not data.get("ok"):
+            raise RuntimeError(f"Telegram API error: {data}")
+
+        return data

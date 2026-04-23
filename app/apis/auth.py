@@ -142,21 +142,24 @@ class Login(Resource):
 
         user_resource = UserResource()
         telegram_service = TelegramService()
+        
 
         if user_resource.check_password(username, password):
 
             # get role for token
             user = user_resource.get_user(username)
             assert isinstance(user, dict)
+            
+            telegram_sync = user_resource.has_user_telegram_chat_id(username)
+            if not telegram_sync:
+                telegram_token = user_resource.get_user_telegram_token(username)
+                chat_id = telegram_service.get_user_chat_id(telegram_token) if telegram_token else None
+                synced_now = bool(chat_id) and user_resource.append_telegram_chat_id(username, chat_id)
 
-            telegram_token = user_resource.get_user_telegram_token(username)
-            print(telegram_token)
-            if telegram_token:
-                chat_id = telegram_service.get_user_chat_id(telegram_token)
-                print(chat_id)
-                if chat_id:
-                    user_resource.append_telegram_chat_id(username, chat_id)
-                    print("appended?")
+                if synced_now:
+                    user_resource.remove_telegram_connect_token(username)
+                    telegram_sync = True
+                    telegram_service.send_telegram_message(chat_id, "Your Telegram is now synced!")
 
             access_token = create_access_token(
                 identity=username,
@@ -168,7 +171,8 @@ class Login(Resource):
             )
             return {
                 MSG: "Logged in successfully",
-                "access_token": access_token
+                "access_token": access_token,
+                "telegram_synced": telegram_sync
             }, HTTPStatus.OK
         
         return {MSG: "Bad credentials"}, HTTPStatus.UNAUTHORIZED
