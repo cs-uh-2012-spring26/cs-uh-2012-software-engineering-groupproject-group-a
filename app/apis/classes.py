@@ -1,4 +1,5 @@
 from flask_restx import Namespace, Resource, fields
+import uuid
 from flask import request
 from flask_jwt_extended import get_jwt, get_jwt_identity, jwt_required
 from http import HTTPStatus
@@ -18,7 +19,10 @@ create_class_model = api.model("CreateClass", {
     "start_date": fields.String(required=True, description="Start datetime (ISO format, must be in the future)", example="2026-05-20T09:00:00Z"),
     "end_date": fields.String(required=True, description="End datetime (ISO, must be after start_date)", example="2026-05-20T10:00:00Z"),
     "location": fields.String(required=True, description="Location of class", example="Studio A"),
-    "capacity": fields.Integer(required=True, description="Maximum capacity", example=20)
+    "capacity": fields.Integer(required=True, description="Maximum capacity", example=20),
+    "is_recurring": fields.Boolean(required=False, description="Whether this class repeats", example=True),
+    "recurrence_type": fields.String(required=False, description="Recurrence type: daily, weekly or monthly", example="weekly"),
+    "recurrence_count": fields.Integer(required=False, description="How many times it repeats, including the first class", example=10),
 })
 
 create_class_success = api.model("CreateClassSuccess", {
@@ -135,7 +139,10 @@ class CreateClass(Resource):
         "start_date": "Start datetime for the class (must be in the future)",
         "end_date": "End datetime for the class (must be after start_date)",
         "location": "Location for the class",
-        "capacity": "Maximum number of participants"
+        "capacity": "Maximum number of participants",
+        "is_recurring":"Indicates wether class is recurring",
+        "recurrence_type":"Indicates if it recurrs: daily, weekly, or monthly",
+        "recurrence_count":"Indicates the amount of times it recurres, including the first class",
     }, description="Create a new class (trainers only)")
     @api.response(HTTPStatus.CREATED, "Class created", create_class_success)
     @api.response(HTTPStatus.NOT_ACCEPTABLE, "Invalid input", create_class_error)
@@ -153,6 +160,9 @@ class CreateClass(Resource):
         end_date = request.json.get("end_date")
         location = request.json.get("location")
         capacity = request.json.get("capacity")
+        is_recurring = request.json.get("is_recurring", False)
+        recurrence_type = request.json.get("recurrence_type", None)
+        recurrence_count = request.json.get("recurrence_count", None)
 
         if not (
             are_non_empty_strings(class_name, start_date, end_date, location)
@@ -176,20 +186,43 @@ class CreateClass(Resource):
         user = self.user_resource.get_user(current_user)
         trainer_id = user.get("_id") if isinstance(user, dict) and user.get("_id") else current_user
         assert isinstance(trainer_id, str)
-        
-        created = self.class_resource.create_class(
-            class_name=class_name,
-            start_date=start_date,
-            end_date=end_date,
-            location=location,
-            capacity=capacity,
-            trainer_id=trainer_id,
-        )
 
-        if created:
-            return {MSG: "Class created successfully", "class_id": created.get("_id")}, HTTPStatus.CREATED
+        # check if class is recurring or not
+        if is_recurring:
+            # this is how i envisioned the endpoint, but you can design it as you like
 
-        return {MSG: "Failed to create class"}, HTTPStatus.BAD_REQUEST
+            # create a unique group recurrence id (uuid) and save it 
+
+            # recurrence_group_id = str(uuid.uuid4())
+
+            # create a loop that loops over recurrence_count, save the uuid in all the classes as the recurrence_group_id
+            # #do all the necessary checks  like:
+
+            if recurrence_type not in ["daily", "weekly", "monthly"]:
+                return {MSG: "recurrence_type must be daily or weekly"}, HTTPStatus.NOT_ACCEPTABLE
+
+            if not isinstance(recurrence_count, int) or recurrence_count <= 0:
+                return {MSG: "recurrence_count must be a positive integer"}, HTTPStatus.NOT_ACCEPTABLE
+
+            if created:
+                return {MSG: "Class created successfully", "class_id": created.get("recurring_class_id")}, HTTPStatus.CREATED
+
+            return {MSG: "Failed to create class"}, HTTPStatus.BAD_REQUEST
+
+        else:    
+            created = self.class_resource.create_class(
+                class_name=class_name,
+                start_date=start_date,
+                end_date=end_date,
+                location=location,
+                capacity=capacity,
+                trainer_id=trainer_id,
+            )
+
+            if created:
+                return {MSG: "Class created successfully", "class_id": created.get("_id")}, HTTPStatus.CREATED
+
+            return {MSG: "Failed to create class"}, HTTPStatus.BAD_REQUEST
 
 
 @api.route("/<string:class_id>/book")

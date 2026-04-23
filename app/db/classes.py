@@ -35,7 +35,7 @@ class ClassResource:
     def __init__(self):
         self.collection = DB.get_collection(CLASS_COLLECTION)
 
-    def create_class(self, class_name: str, start_date: str, end_date: str, location: str, capacity: int, trainer_id: str):
+    def create_class(self, class_name: str, start_date: str, end_date: str, location: str, capacity: int, trainer_id: str, recurrence_group_id :str | None = None):
         class_data = {
             "class_name": class_name,
             "start_date": start_date,
@@ -43,8 +43,11 @@ class ClassResource:
             "location": location,
             "capacity": capacity,
             "trainer_id": trainer_id,
-            "member_list": []
+            "member_list": [],   
         }
+        # reccuring classes are group by reccurence id
+        if recurrence_group_id is not None:
+            class_data["recurrence_group_id"] = recurrence_group_id
 
         result = self.collection.insert_one(class_data)
         created = self.collection.find_one({"_id": result.inserted_id})
