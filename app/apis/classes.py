@@ -1,3 +1,5 @@
+from abc import ABC, abstractmethod
+
 from flask_restx import Namespace, Resource, fields
 import uuid
 from flask import request
@@ -391,7 +393,32 @@ class ClassMembers(Resource):
         #     return response_data, status_code
 
         return {"members": result}, HTTPStatus.OK # otherwise return result, all went well
+    
+#########################################################################
+class NotificationStrategy(ABC):
+    @abstractmethod
+    def send(self, user_data, message_body):
+        pass
 
+class EmailNotification(NotificationStrategy):
+    def send(self, user_data, message_body):
+        pass
+
+class TelegramNotification(NotificationStrategy):
+    def send(self, user_data, message_body):
+        pass
+
+class NotificationEngine:
+    def __init__(self, strategies=None):
+        self._strategies = strategies or []
+
+    def broadcast(self, user_data, message):
+        results = []
+        for strategy in self._strategies:
+            success, error = strategy.send(user_data, message)
+            results.append({"method": strategy.__class__.__name__, "success": success, "error": error})
+        return results
+##############################################################################
 
 @api.route("/remind/<string:class_id>")
 class ClassReminder(Resource):
@@ -419,5 +446,20 @@ class ClassReminder(Resource):
         assert members is not None
         assert class_name is not None
 
-        response_payload = _send_reminder_emails(members, class_name, user_resource)
-        return response_payload, HTTPStatus.OK
+        # response_payload = _send_reminder_emails(members, class_name, user_resource)
+        # return response_payload, HTTPStatus.OK
+        
+        active_strategies = [
+            EmailNotification(),
+            TelegramNotification()
+        ]
+        
+        engine = NotificationEngine(active_strategies)
+        
+        total_sent = 0
+        for member_id in members:
+            user = user_resource.get_user(member_id)
+            engine.broadcast(user, f"Your class {class_name} starts soon!")
+            total_sent += 1
+
+        return {MSG: "Reminders processed", "count": total_sent}, HTTPStatus.OK
