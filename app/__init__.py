@@ -13,6 +13,7 @@ def create_app():
     from app.config import Config
     from app.apis.auth import api as auth_ns
     from app.apis.classes import api as classes_ns
+    from app.apis.reminders import api as reminders_ns
     from app.db import DB
 
     app = Flask(__name__)
@@ -63,6 +64,7 @@ def create_app():
     api.init_app(app)
     api.add_namespace(auth_ns)
     api.add_namespace(classes_ns)
+    api.add_namespace(reminders_ns)
 
     @api.errorhandler(Exception)
     def handle_input_validation_error(error):

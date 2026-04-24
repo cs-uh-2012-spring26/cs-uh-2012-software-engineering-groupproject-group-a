@@ -10,7 +10,7 @@
 
 - Single Responsibility Principle (SRP) ClassReminder.post
 
-  Fix: _TODO: add ur fix explanation here_
+  Fix: Added helper functions to remove all logic from the actual endpoint, was also fixed through the new notification feature.
 
 - Dependency Inversion Principle (DIP) CreateClass.post
 
@@ -30,7 +30,6 @@
 
   Fix: I fixed the duplicate code by moving the repeated string validation logic into a helper function, are_non_empty_strings(). This removed redundancy, made the endpoints cleaner, and ensures any future changes to validation only need to be made in one place.
 
-
 - Long Method: One endpoint method handles authorization, ownership checks, class lookup, date validation, email iteration, error aggregation, and response construction in a single block
 
   Fix: _TODO: add ur fix explanation here_
@@ -40,7 +39,7 @@
 
 - Duplicate Code: same three-line block
 
-  Fix: The four-line block that fetches user and extracts their trainer ID was copy-pasted in both ClassMembers.get and ClassReminder.post. Extracted this code into helper function _get_trainer_id() and replaced both duplicates with a call to it.
+  Fix: The four-line block that fetches user and extracts their trainer ID was copy-pasted in both ClassMembers.get and ClassReminder.post. Extracted this code into helper function \_get_trainer_id() and replaced both duplicates with a call to it.
 
 - Dead Code: redundant validation - password field validated twice
 
@@ -66,7 +65,7 @@ The refactor extracted each algorithm into its own class (SingleClassStrategy, R
 
 **Explanation and Refactoring**
 
-For the new notification feature, we had to completely rework our logic, and decided to utilize the Strategy design. To adhere to overall design principles, we created a general “send_reminders” function, abstracting the logic away from the ClassReminder endpoint. We implemented an interface NotificationStrategy with a single send() method which both EmailNotification and TelegramNotification along with future services will have to implement. The NotificationEngine is the actual brain responsible for delegating which services to call based on the available strategies. In the current implementation, it calls all the services available in the strategies, but this is easily adaptable to call specific services when needed. It also keeps track of the number of successful and unsuccessful notifications and returns them in a clear results array.
+For the new notification feature, we used the Strategy pattern to make reminder delivery flexible and to keep the endpoint from handling routing logic directly. The ClassReminder endpoint uses the send_reminders() function, which send the notifications through the new NotificationEngine. Each delivery method follows the same NotificationStrategy interface, with a single send() method. Right now, the system includes two concrete strategies EmailNotification and TelegramNotification. The engine first checks each member’s preferred_notification_methods field and only uses the methods that user has selected.
 
 ## New Class Diagram and It's Changes
 
@@ -78,11 +77,11 @@ The main differences in the new class diagram is that we now have a much cleaner
 
 _Feature 6_
 
-For Recurring Class feature: the updated diagram introduces a Strategy Pattern for class creation, where CreateClass routes to either SingleClassStrategy or RecurringClassStrategy based on the is_recurring boolean. The recurring strategy takes two additional parameters: recurrence_type (either DAILY, WEEKLY or MONTHLY) and recurrence_count, how many times the class should reoccur. ClassResource.create_recurring_classes() method generates each new class assigning a recurrence_group_id, as well as the timings for each class with respect to the recurrence interval chosen. Return types across both strategies are standardized through ClassResult Enum.
+The updated diagram introduces a Strategy Pattern for class creation, where CreateClass routes to either SingleClassStrategy or RecurringClassStrategy based on the is_recurring boolean. The recurring strategy takes two additional parameters: recurrence_type (either DAILY, WEEKLY or MONTHLY) and recurrence_count, how many times the class should reoccur. ClassResource.create_recurring_classes() method generates each new class assigning a recurrence_group_id, as well as the timings for each class with respect to the recurrence interval chosen. Return types across both strategies are standardized through ClassResult Enum.
 
 _Feature 7_
 
-The class diagram now shows the strategy design strategy that implements notification services. We have a method send_reminder that will be calling the strategy. NotificationEngine is responsible for orchestrating the strategy calls. There’s one interface class NotificationStrategy which has one method that will be implemented by the different notifications services. For each service, there’s extra methods that will implement the actual logic (i.e. calling an email client or sending requests to telegram API). 
+The new Configure Notifications feature updates the diagram by adding a new ConfigureReminders endpoint under app.apis.reminders. It handles POST requests to /reminders/configure and lets authenticated users update how they want to receive class reminders. Then the larger changes in the class diagram are visible through the new interface of the NotificationStrategy which handles the new logic for using different strategies to send notifications to members. The SendReminders function is used in the ClassReminder endpoint since it abstracts the logic notification service allows the endpoint to remain minimal, while allowing us to change the actual implementations without affecting other places.
 
 ## Member Responsibilities
 
@@ -103,7 +102,7 @@ To ensure everyone collaborates equally, similarly to Sprint 3A, we started by c
 
 **Task 4**
 
-- TODO: check CI pipeline
+- CI pipeline works as before, does not need to be changed.
 
 **Task 5**
 

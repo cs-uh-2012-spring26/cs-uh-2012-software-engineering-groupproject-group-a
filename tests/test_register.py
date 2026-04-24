@@ -1,6 +1,8 @@
 from unittest.mock import patch
 from http import HTTPStatus
 
+from app.db.users import PREFERRED_NOTIFICATION_METHODS, UserResource
+
 def test_register_member_success(client):
     data = {
         "full_name": "John Doe",
@@ -10,6 +12,24 @@ def test_register_member_success(client):
     }
     response = client.post('/auth/register', json=data)
     assert response.status_code == HTTPStatus.CREATED
+
+
+def test_register_member_default_notification_preference(client, app):
+    data = {
+        "full_name": "John Doe",
+        "username": "john_doe",
+        "email": "john@example.com",
+        "password": "password123"
+    }
+    response = client.post('/auth/register', json=data)
+
+    assert response.status_code == HTTPStatus.CREATED
+
+    with app.app_context():
+        user = UserResource().get_user("john_doe")
+
+    assert isinstance(user, dict)
+    assert user.get(PREFERRED_NOTIFICATION_METHODS) == ["email"]
 
 
 def test_register_trainer_success(client):
