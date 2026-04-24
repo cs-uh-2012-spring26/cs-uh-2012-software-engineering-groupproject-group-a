@@ -1,16 +1,17 @@
 from abc import ABC, abstractmethod
 from app.services.email_service import EmailService
-
+from app.services.telegram_service import TelegramService
+from app.db.users import UserResource
 
 def _resolve_member_email(user_data):
     if not isinstance(user_data, dict):
         return None
     return user_data.get("email")
 
-def _resolve_member_number(user_data):
+def _resolve_member_telegram_chat_id(user_data):
     if not isinstance(user_data, dict):
         return None
-    return user_data.get("phone_number")
+    return user_data.get("telegram_chat_id")
 
 # interface 
 class NotificationStrategy(ABC):
@@ -26,16 +27,13 @@ class EmailNotification(NotificationStrategy):
 
         return EmailService.send_class_reminder(member_email, message_body)
 
-
 class TelegramNotification(NotificationStrategy):
     def send(self, user_data, message_body) -> tuple[bool, str | None]:
-        member_number = _resolve_member_number(user_data)
-        # check that number is a valid number
-            # else return False, "missing or invalid number"
-
-        # return TelegramService.send_class_reminder(member_number, message_body)
-        return False, "telegram strategy not implemented"
-
+        user_telegram_chat_id = _resolve_member_telegram_chat_id(user_data)
+        if not isinstance(user_telegram_chat_id, str) or len(user_telegram_chat_id.strip()) == 0:
+            return False, "missing telegram chat id"
+        message_body = f"Reminder: Your class '{message_body}' is coming up soon!"
+        return TelegramService.send_telegram_message(user_telegram_chat_id, message_body)
 
 class NotificationEngine:
     def __init__(self, strategies=None):
@@ -74,19 +72,3 @@ def send_reminders(members, class_name, user_resource, strategies=None):
     response_payload = {"notification_strategies": strategy_names, **strategy_results}
 
     return response_payload
-
-
-'''
-{
-    notification_strategies: [email, telegram, etc],
-    email_results: {
-            success: 4
-            fail: 1
-        }
-    telegram_results: {
-            success: 3
-            fail: 2
-        }
-}
-
-'''

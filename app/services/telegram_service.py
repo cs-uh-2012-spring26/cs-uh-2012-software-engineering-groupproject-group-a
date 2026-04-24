@@ -35,18 +35,23 @@ class TelegramService:
     
     @staticmethod
     def send_telegram_message(chat_id: str, text: str):
-        resp = requests.post(
-            f"{TELEGRAM_API}/sendMessage",
-            json={
-                "chat_id": chat_id,
-                "text": text,
-            },
-            timeout=10,
-        )
-        resp.raise_for_status()
-        data = resp.json()
+        try:
+            resp = requests.post(
+                f"{TELEGRAM_API}/sendMessage",
+                json={
+                    "chat_id": chat_id,
+                    "text": text,
+                },
+                timeout=10,
+            )
+            resp.raise_for_status()
+            data = resp.json()
 
-        if not data.get("ok"):
-            raise RuntimeError(f"Telegram API error: {data}")
-
-        return data
+            if resp.status_code == 200 and data.get("ok"):
+                return True, None
+                
+            error_msg = data.get("description", "Unknown Telegram error")
+            return False, f"Telegram API error: {error_msg}"
+    
+        except Exception as e:
+            return False, str(e)
