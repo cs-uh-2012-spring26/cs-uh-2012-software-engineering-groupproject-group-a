@@ -16,13 +16,13 @@
 
   Fix: Fixed the DIP issue by moving the creation of UserResource and ClassResource out of the post() method and into the constructor. The endpoint now uses self.user_resource and self.class_resource, which can be passed in from outside or default to the real implementations. This makes the method less hardcoded, easier to test with mocks, and more flexible if the database/resource layer changes later.
 
-- Open/Closed Principle (OCP) ClassResource.book\*class
-
-  Fix: _TODO: add ur fix explanation here_
-
 - Open/Closed Principle (OCP) ClassBooking.post
 
-  Fix: _TODO: add ur fix explanation here_
+  Fix: he ClassResource.post method along with other methods in the app were using string literals comparisons to validate the return values, in this case from the ClassResource.book_class method. This would make it difficult to add to subtract different outcomes. As such, we implemented a central enumeration class where all the different outcomes and return messages are resolved. Now, different methods will use the same class to validate return messages. 
+  
+- Open/Closed Principle (OCP) ClassResource.book\*class
+
+  Fix: For ClassBooking, following the logic from the previous fix, instead of returning plain strings, it will reference the enumeration class and use them as return values. 
 
 **Code Smells and Fixes:**
 
@@ -35,8 +35,7 @@
   Fix: _TODO: add ur fix explanation here_
 
 - Primitive Obsession: Usage of primitive types instead of small objects for simple tasks
-
-  Fix: _TODO: add ur fix explanation here_
+  Fix: Here a few methods, ClassResource.get_class_by_id, ClassResource.get_class_members, ClassResource.book_class, and ClassBooking.post were returning plain strings. All their return types are the same type of error messages which we have implemented to fix OCP violations. Instead of returning strings, these methods now return the enumeration class with the different error message types. 
 
 - Duplicate Code: same three-line block
 

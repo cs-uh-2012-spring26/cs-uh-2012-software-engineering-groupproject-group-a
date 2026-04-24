@@ -31,6 +31,12 @@ create_class_success = api.model("CreateClassSuccess", {
     "class_id": fields.String(example="605c3c2f9f1b2c3d4e5f6a7b")
 })
 
+create_recurring_class_success = api.model("CreateRecurringClassSuccess", {
+    MSG: fields.String(example="Recurring classes created successfully"),
+    "group_id": fields.String(example="550e8400-e29b-41d4-a716-446655440000"),
+    "classes_created": fields.Integer(example=3)
+})
+
 create_class_error = api.model("CreateClassError", {
     MSG: fields.String(example="Invalid value provided for one of the fields")
 })
@@ -176,6 +182,7 @@ class CreateClass(Resource):
         "recurrence_count":"Indicates the amount of times it recurres, including the first class",
     }, description="Create a new class (trainers only)")
     @api.response(HTTPStatus.CREATED, "Class created", create_class_success)
+    @api.response(HTTPStatus.CREATED, "Recurring classes created", create_recurring_class_success)
     @api.response(HTTPStatus.NOT_ACCEPTABLE, "Invalid input", create_class_error)
     @api.response(HTTPStatus.FORBIDDEN, FORBIDDEN_ROLE_MESSAGE, create_class_forbidden)
     @api.response(HTTPStatus.BAD_REQUEST, "Failed to create class", create_class_bad_request)
