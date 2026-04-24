@@ -84,3 +84,62 @@ def test_create_class_failed_create_returns_400(client, trainer_headers, monkeyp
 
     assert response.status_code == 400
     assert response.get_json()["message"] == "Failed to create class"
+
+def test_trainer_create_recurring_class_success(client, trainer_headers):
+    
+    response = client.post(
+        "/classes/create-class",
+        headers=trainer_headers,
+        json={
+            "class_name": "Yoga",
+            "start_date": future_start,
+            "end_date": future_end,
+            "location": "Studio 1",
+            "capacity": 20,
+            "is_recurring": True,
+            "recurrence_type": "weekly",
+            "recurrence_count": 3,
+        },
+    )
+    
+    assert response.status_code == 201
+    data = response.get_json()
+    assert "group_id" in data
+    assert data["classes_created"] == 3
+    
+def test_trainer_create_recurring_class_invalid_type(client, trainer_headers):
+    
+    response = client.post(
+        "/classes/create-class",
+        headers=trainer_headers,
+        json={
+            "class_name": "Yoga",
+            "start_date": future_start,
+            "end_date": future_end,
+            "location": "Studio 1",
+            "capacity": 20,
+            "is_recurring": True,
+            "recurrence_type": "hourly", # hourly is not valid
+            "recurrence_count": 3,
+        },
+    )
+    assert response.status_code == 406
+    assert response.get_json()["message"] == "recurrence_type must be daily, weekly, or monthly"
+    
+def test_trainer_create_recurring_class_invalid_count(client, trainer_headers):
+    response = client.post(
+        "/classes/create-class",
+        headers=trainer_headers,
+        json={
+            "class_name": "Yoga Strength",
+            "start_date": future_start,
+            "end_date": future_end,
+            "location": "Studio ZA",
+            "capacity": 20,
+            "is_recurring": True,
+            "recurrence_type": "weekly",
+            "recurrence_count": -1, # this is the problematic integer
+        },
+    )
+    assert response.status_code == 406
+    assert response.get_json()["message"] == "recurrence_count must be a positive integer"
