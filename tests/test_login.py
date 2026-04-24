@@ -5,12 +5,9 @@ import pytest
 from app.apis import MSG
 
 MOCK_GET_CHAT = "app.apis.auth.TelegramService.get_user_chat_id"
-MOCK_SEND_MSG = "app.apis.auth.TelegramService.send_telegram_message"
 
 @patch(MOCK_GET_CHAT)
 def test_login_success(mock_get_chat, client, seeded_member):
-    """Test successful login when telegram is not yet synced."""
-    # Setup: mock returns None (no telegram update found)
     mock_get_chat.return_value = None
     
     response = client.post(
