@@ -6,7 +6,7 @@
 
 - Open/Closed Principle (OCP) Violation CreateClass.post (and others like ClassBooking.post, ClassMembers.get)
 
-  Fix: _TODO: add ur fix explanation here_
+  Fix: The hardcoded role checks in ClassBooking.post and ClassMembers.get were replaced with the @require_roles(TRAINER, MEMBER) decorator. Adding a new role now only requires changing the decorator argument, without modifying the method body.
 
 - Single Responsibility Principle (SRP) ClassReminder.post
 
@@ -40,11 +40,11 @@
 
 - Duplicate Code: same three-line block
 
-  Fix: _TODO: add ur fix explanation here_
+  Fix: The four-line block that fetches user and extracts their trainer ID was copy-pasted in both ClassMembers.get and ClassReminder.post. Extracted this code into helper function _get_trainer_id() and replaced both duplicates with a call to it.
 
 - Dead Code: redundant validation - password field validated twice
 
-  Fix: _TODO: add ur fix explanation here_
+  Fix: In Register.post in auth.py, the password field was being validated twice in the same if condition. Deleted the redundant second check since it could not change the outcome.
 
 ## Design Patterns for new Features
 
