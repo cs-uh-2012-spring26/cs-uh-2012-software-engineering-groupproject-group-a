@@ -13,6 +13,7 @@ PASSWORD_HASH = "password_hash"
 ROLE = "role"
 TELEGRAM_CONNECT_TOKEN = "telegram_connect_token"
 TELEGRAM_CHAT_ID = "telegram_chat_id"
+PREFERRED_NOTIFICATION_METHODS = "preferred_notification_methods"
 
 def make_connect_token():
     return "connect_" + secrets.token_urlsafe(18).replace("-", "_")[:24]
@@ -62,7 +63,8 @@ class UserResource:
             EMAIL: email,
             ROLE: "trainer" if trainer_code in TRAINERCODES else "member",
             PASSWORD_HASH: password_hash,
-            TELEGRAM_CONNECT_TOKEN: telegram_connect_token
+            TELEGRAM_CONNECT_TOKEN: telegram_connect_token,
+            PREFERRED_NOTIFICATION_METHODS: ["email"],
         }
 
         result = self.collection.insert_one(user_data)
@@ -79,6 +81,13 @@ class UserResource:
         result = self.collection.update_one(
             {USERNAME: username},
             {"$unset": {TELEGRAM_CONNECT_TOKEN: ""}},
+        )
+        return result.matched_count == 1
+
+    def set_preferred_notification_methods(self, username: str, methods: list[str]):
+        result = self.collection.update_one(
+            {USERNAME: username},
+            {"$set": {PREFERRED_NOTIFICATION_METHODS: methods}},
         )
         return result.matched_count == 1
     

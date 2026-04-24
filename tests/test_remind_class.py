@@ -12,6 +12,7 @@ MOCK_GET_USER = "app.apis.classes.UserResource.get_user"
 MOCK_GET_CLASS_MEMBERS = "app.apis.classes.ClassResource.get_class_members"
 MOCK_GET_CLASS_BY_ID = "app.apis.classes.ClassResource.get_class_by_id"
 MOCK_SEND_CLASS_REMINDER = "app.services.notification_service.EmailService.send_class_reminder"
+MOCK_SEND_TELEGRAM_REMINDER = "app.services.notification_service.TelegramService.send_telegram_message"
 
 # for mocking idfferent types of users in Userresource.get_user
 def user_side_effect_helper(user_id):
@@ -155,3 +156,38 @@ def test_remind_class_does_not_have_name(mock_get_user, mock_get_members, mock_g
     
     assert response.status_code == HTTPStatus.OK
     mock_send_email.assert_called_with("m1@test.com", "your upcoming class") # the fall back class name is "your upcoming class"
+
+
+@patch(MOCK_SEND_TELEGRAM_REMINDER)
+@patch(MOCK_SEND_CLASS_REMINDER)
+@patch(MOCK_GET_CLASS_BY_ID)
+@patch(MOCK_GET_CLASS_MEMBERS)
+@patch(MOCK_GET_USER)
+def test_remind_class_respects_member_preferred_methods(mock_get_user, mock_get_members, mock_get_class_by_id, mock_send_email, mock_send_telegram, client, trainer_headers):
+    def get_user_side_effect(user_id):
+        if user_id == "member_1":
+            return {
+                "_id": "m1",
+                "email": "m1@test.com",
+                "telegram_chat_id": "chat_123",
+                "preferred_notification_methods": ["telegram"],
+            }
+        return {"_id": "trainer_id"}
+
+    mock_get_user.side_effect = get_user_side_effect
+    mock_get_members.return_value = ["member_1"]
+    mock_get_class_by_id.return_value = {"class_name": "Yoga"}
+
+    mock_send_email.return_value = (True, None)
+    mock_send_telegram.return_value = (True, None)
+
+    response = client.post("/classes/remind/valid_id_here", headers=trainer_headers)
+
+    assert response.status_code == HTTPStatus.OK
+    assert "EmailNotification_results" not in response.json
+    assert response.json["TelegramNotification_results"]["success"] == 1
+    assert response.json["TelegramNotification_results"]["fail"] == 0
+    mock_send_email.assert_not_called()
+    mock_send_telegram.assert_called_once_with(
+        "chat_123", "Reminder: Your class 'Yoga' is coming up soon!"
+    )

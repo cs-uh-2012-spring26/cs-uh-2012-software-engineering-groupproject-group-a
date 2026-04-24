@@ -1,7 +1,10 @@
 from abc import ABC, abstractmethod
 from app.services.email_service import EmailService
 from app.services.telegram_service import TelegramService
-from app.db.users import UserResource
+from app.db.users import PREFERRED_NOTIFICATION_METHODS
+
+METHOD_EMAIL = "email"
+METHOD_TELEGRAM = "telegram"
 
 def _resolve_member_email(user_data):
     if not isinstance(user_data, dict):
@@ -47,15 +50,57 @@ class NotificationEngine:
         return results
 
 
+def _build_strategy_factory(active_strategies):
+    strategy_factory = {}
+    for strategy in active_strategies:
+        if isinstance(strategy, EmailNotification):
+            strategy_factory[METHOD_EMAIL] = EmailNotification
+        elif isinstance(strategy, TelegramNotification):
+            strategy_factory[METHOD_TELEGRAM] = TelegramNotification
+    return strategy_factory
+
+
+def _resolve_member_methods(user_data, available_methods):
+    if not isinstance(user_data, dict):
+        return list(available_methods)
+
+    raw_methods = user_data.get(PREFERRED_NOTIFICATION_METHODS)
+    if not isinstance(raw_methods, list):
+        # backward compatibility for typo'd field name if present
+        raw_methods = user_data.get("preffered_notification_methods")
+
+    if not isinstance(raw_methods, list):
+        return list(available_methods)
+
+    selected_methods = []
+    seen = set()
+    for raw_method in raw_methods:
+        if not isinstance(raw_method, str):
+            continue
+        normalized_method = raw_method.strip().lower()
+        if normalized_method in available_methods and normalized_method not in seen:
+            selected_methods.append(normalized_method)
+            seen.add(normalized_method)
+
+    if len(selected_methods) == 0 and METHOD_EMAIL in available_methods:
+        return [METHOD_EMAIL]
+
+    return selected_methods
+
+
 def send_reminders(members, class_name, user_resource, strategies=None):
     active_strategies = strategies if isinstance(strategies, list) and len(strategies) > 0 else [EmailNotification()]
-    engine = NotificationEngine(active_strategies)
+    strategy_factory = _build_strategy_factory(active_strategies)
+    available_methods = list(strategy_factory)
 
     strategy_names = [strategy.__class__.__name__ for strategy in active_strategies]
     strategy_results = {}
 
     for member in members:
         member_user = user_resource.get_user(member)
+        member_methods = _resolve_member_methods(member_user, available_methods)
+        member_strategies = [strategy_factory[method]() for method in member_methods if method in strategy_factory]
+        engine = NotificationEngine(member_strategies)
         results = engine.broadcast(member_user, class_name)
 
         for result in results:
