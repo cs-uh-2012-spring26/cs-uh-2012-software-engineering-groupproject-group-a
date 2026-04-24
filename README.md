@@ -118,3 +118,14 @@ In order to ensure that you are able to test the protected API endpoints (such a
 3. Finally, SwaggerUI provides an "Authorize" button at the top of the page. Click this:
    1. For the token value field, write `Bearer <token>`, replacing `<token>` with the copied string you received from the login endpoint. Make sure to include a space between Bearer and the token.
    1. Hit Authorize and you will now be "logged in" and authenticated + authorized for the protected routes.
+
+## Telegram Notifications
+
+After registering, the response includes a Telegram link. To link your account:
+
+1. Open the link on a device where your Telegram account is active and tap **Start** to start the bot.
+2. Log in to the app: the bot will automatically send you a confirmation message once your Telegram account is successfully linked.
+
+### Configuring Notifications: `POST /reminders/configure`
+
+This endpoint lets authenticated users choose how they receive reminders. Send a JSON body with `preferred_notification_methods`, a non-empty list of one or both supported channels: `"email"` and `"telegram"`. The saved preferences are applied to all future booking reminders for that user.
