@@ -1,18 +1,28 @@
+from http import HTTPStatus
+from unittest.mock import patch
+
 import pytest
+from app.apis import MSG
 
+MOCK_GET_CHAT = "app.apis.auth.TelegramService.get_user_chat_id"
 
-def test_login_success(client, seeded_member):
+@patch(MOCK_GET_CHAT)
+def test_login_success(mock_get_chat, client, seeded_member):
+    mock_get_chat.return_value = None
+    
     response = client.post(
         "/auth/login",
-        json={"username": seeded_member["username"], "password": "password123"},
+        json={
+            "username": seeded_member["username"], 
+            "password": "password123"
+        }
     )
 
-    assert response.status_code == 200
+    assert response.status_code == HTTPStatus.OK
     data = response.get_json()
-    assert data["message"] == "Logged in successfully"
-    assert isinstance(data.get("access_token"), str)
-    assert len(data["access_token"]) > 0
-
+    assert data[MSG] == "Logged in successfully"
+    assert "access_token" in data
+    assert data["telegram_synced"] is False
 
 @pytest.mark.parametrize(
     "username,password",

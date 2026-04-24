@@ -61,7 +61,7 @@ def test_register_failed(client):
         "email": "fail@example.com",
         "password": "password123"
     }
-    with patch('app.apis.auth.UserResource.create_user', return_value=False):
+    with patch('app.apis.auth.UserResource.create_user', return_value=(None,None)):
         response = client.post('/auth/register', json=data)
         assert response.status_code == HTTPStatus.BAD_REQUEST
       

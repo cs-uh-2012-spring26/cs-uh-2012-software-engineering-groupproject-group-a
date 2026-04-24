@@ -5,6 +5,7 @@ import datetime
 from http import HTTPStatus
 from app.apis import MSG, are_non_empty_strings
 from app.db.users import UserResource
+from app.services.telegram_service import TelegramService
 
 api = Namespace(
     "auth", description="API endpoints for authentication"
@@ -27,11 +28,13 @@ login_model = api.model("Login", {
 # success or error models
 login_success_model = api.model("LoginSuccess", {
     MSG: fields.String(example="Logged in successfully"),
-    "access_token": fields.String(example="hjX02ksdkKkjqD...")
+    "access_token": fields.String(example="hjX02ksdkKkjqD..."),
+    "telegram_synced": fields.Boolean(description="Whether the user's Telegram is synced", example=False)
 })
 
 register_success_model = api.model("RegisterSuccess", {
-    MSG: fields.String(example="User registered successfully")
+    MSG: fields.String(example="User registered successfully"),
+    "telegram_connect_link": fields.String(example="https://t.me/SWE_Fitness_Booking_Bot?start=connect_token_abc123")
 })
 
 login_error_model = api.model("LoginError", {
@@ -89,16 +92,19 @@ class Register(Resource):
         if existing_email:
             return {MSG: "Email already exists"}, HTTPStatus.BAD_REQUEST
         
-        success = user_resource.create_user(
+        registered_user, telegram_link = user_resource.create_user(
             username=username,
             email=email,
             password=password,
             full_name=full_name,
             trainer_code= trainer_code if trainer_code else None
         )
-        
-        if success:
-            return {MSG: "User registered successfully"}, HTTPStatus.CREATED
+
+        if registered_user:
+            return {
+                MSG: "User registered successfully",
+                "telegram_connect_link": telegram_link
+                    }, HTTPStatus.CREATED
         
         return {MSG: "Registration failed"}, HTTPStatus.BAD_REQUEST
 
@@ -137,6 +143,8 @@ class Login(Resource):
             }, HTTPStatus.NOT_ACCEPTABLE
 
         user_resource = UserResource()
+        telegram_service = TelegramService()
+        
 
         if user_resource.check_password(username, password):
 
@@ -144,6 +152,17 @@ class Login(Resource):
             user = user_resource.get_user(username)
             assert isinstance(user, dict)
             
+            telegram_sync = user_resource.has_user_telegram_chat_id(username)
+            if not telegram_sync:
+                telegram_token = user_resource.get_user_telegram_token(username)
+                chat_id = telegram_service.get_user_chat_id(telegram_token) if telegram_token else None
+                synced_now = bool(chat_id) and user_resource.append_telegram_chat_id(username, chat_id)
+
+                if synced_now:
+                    user_resource.remove_telegram_connect_token(username)
+                    telegram_sync = True
+                    telegram_service.send_telegram_message(chat_id, "Your Telegram is now synced!")
+
             access_token = create_access_token(
                 identity=username,
                 additional_claims={
@@ -154,7 +173,8 @@ class Login(Resource):
             )
             return {
                 MSG: "Logged in successfully",
-                "access_token": access_token
+                "access_token": access_token,
+                "telegram_synced": telegram_sync
             }, HTTPStatus.OK
         
         return {MSG: "Bad credentials"}, HTTPStatus.UNAUTHORIZED

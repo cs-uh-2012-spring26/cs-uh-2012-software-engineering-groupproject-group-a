@@ -8,7 +8,7 @@ from app import DAILY, WEEKLY, MONTHLY
 from app.apis import MSG, MEMBER, TRAINER, FORBIDDEN_ROLE_MESSAGE, are_non_empty_strings, require_roles
 from app.db.users import UserResource
 from app.db.classes import ClassResult, ClassResource
-from app.services.email_service import EmailService
+from app.services.notification_service import EmailNotification, TelegramNotification, send_reminders
 
 api = Namespace(
     "classes", description="API endpoints for class viewing and creation"
@@ -71,11 +71,20 @@ book_class_bad_request = api.model("BookClassBadRequest", {
     MSG: fields.String(example="Failed to book class")
 })
 
+strategy_result_model = api.model("StrategyResult", {
+    "success": fields.Integer(description="Number of successful deliveries", example=1),
+    "fail": fields.Integer(description="Number of failed deliveries", example=0)
+})
+
 remind_class_success = api.model("RemindClassSuccess", {
     MSG: fields.String(example="Reminder process completed"),
-    "sent": fields.Integer(example=8),
-    "failed": fields.Integer(example=2),
-    "errors": fields.List(fields.String, description="Send failure details", required=False),
+    "notification_strategies": fields.List(
+        fields.String, 
+        description="List of strategies attempted", 
+        example=["EmailNotification", "TelegramNotification"]
+    ),
+    "EmailNotification_results": fields.Nested(strategy_result_model),
+    "TelegramNotification_results": fields.Nested(strategy_result_model),
 })
 
 remind_class_invalid_id = api.model("RemindClassInvalidId", {
@@ -146,7 +155,6 @@ class RecurringClassStrategy:
         return {MSG: "Failed to create classes"}, HTTPStatus.BAD_REQUEST
 
 @api.route("/create-class")
-
 class CreateClass(Resource):
     def __init__(self, api=None, *args, **kwargs):
         user_resource = kwargs.pop("user_resource", None)
@@ -279,16 +287,6 @@ view_members_forbidden = api.model("ViewMembersForbidden", {
     MSG: fields.String(example="Only the trainer of this class can view its members")
 }) # swagger ui response for unauthorized role
 
-
-# def _members_error_response(result): # handles the various errors we expect to have when getting class members
-#     if result in (BookingResult.INVALID_ID, "invalid_class_id"):
-#         return {MSG: "Invalid class id"}, HTTPStatus.UNPROCESSABLE_ENTITY
-#     if result in (BookingResult.NOT_FOUND, "class_not_found"):
-#         return {MSG: "Class not found"}, HTTPStatus.NOT_FOUND
-#     if result in (BookingResult.NOT_OWNED, "not_your_class"):
-#         return {MSG: "Only the trainer of this class can view its members"}, HTTPStatus.FORBIDDEN
-#     return None
-
 def _get_trainer_id():
     current_user = get_jwt_identity()
     user = UserResource().get_user(current_user)
@@ -321,44 +319,6 @@ def _prepare_reminder_context(class_id, trainer_id, class_resource):
     return members, class_name, None
 
 
-def _send_reminder_emails(members, class_name, user_resource):
-    sent = 0
-    failed = 0
-    errors = []
-    for member in members:
-        member_user = user_resource.get_user(member)
-        member_email = member_user.get("email") if isinstance(member_user, dict) else None
-
-        if not isinstance(member_email, str) or len(member_email.strip()) == 0:
-            failed += 1
-            errors.append(f"{member}: missing email")
-            continue
-
-        success, error = EmailService.send_class_reminder(member_email, class_name)
-        if success:
-            sent += 1
-        else:
-            failed += 1
-            if isinstance(error, str) and len(error) > 0:
-                errors.append(f"{member_email}: {error}")
-
-    message = (
-        f"All {sent} reminder emails sent successfully"
-        if failed == 0
-        else "Reminder process completed with some failed emails"
-    )
-
-    response_payload = {
-        MSG: message,
-        "sent": sent,
-        "failed": failed,
-    }
-
-    if len(errors) > 0:
-        response_payload["errors"] = errors
-
-    return response_payload
-
 @api.route("/<string:class_id>/members")
 class ClassMembers(Resource):
     @jwt_required()
@@ -383,16 +343,8 @@ class ClassMembers(Resource):
         if isinstance(result, ClassResult):
             return result.resolves()
         
-        # if isinstance(result, BookingResult):
-        #     response_data, status_code = BOOKING_RESPONSE_MAP.get(
-        #         result, 
-        #         ({MSG: "An error occurred"}, HTTPStatus.BAD_REQUEST)
-        #     )
-        #     return response_data, status_code
-
         return {"members": result}, HTTPStatus.OK # otherwise return result, all went well
-
-
+    
 @api.route("/remind/<string:class_id>")
 class ClassReminder(Resource):
     @jwt_required()
@@ -419,5 +371,12 @@ class ClassReminder(Resource):
         assert members is not None
         assert class_name is not None
 
-        response_payload = _send_reminder_emails(members, class_name, user_resource)
+        notification_strategies = [EmailNotification(), TelegramNotification()]
+
+        response_payload = send_reminders(
+            members,
+            class_name,
+            user_resource,
+            strategies=notification_strategies,
+        )
         return response_payload, HTTPStatus.OK
