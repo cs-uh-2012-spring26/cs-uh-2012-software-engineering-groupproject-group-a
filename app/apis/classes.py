@@ -71,11 +71,20 @@ book_class_bad_request = api.model("BookClassBadRequest", {
     MSG: fields.String(example="Failed to book class")
 })
 
+strategy_result_model = api.model("StrategyResult", {
+    "success": fields.Integer(description="Number of successful deliveries", example=1),
+    "fail": fields.Integer(description="Number of failed deliveries", example=0)
+})
+
 remind_class_success = api.model("RemindClassSuccess", {
     MSG: fields.String(example="Reminder process completed"),
-    "sent": fields.Integer(example=8),
-    "failed": fields.Integer(example=2),
-    "errors": fields.List(fields.String, description="Send failure details", required=False),
+    "notification_strategies": fields.List(
+        fields.String, 
+        description="List of strategies attempted", 
+        example=["EmailNotification", "TelegramNotification"]
+    ),
+    "EmailNotification_results": fields.Nested(strategy_result_model),
+    "TelegramNotification_results": fields.Nested(strategy_result_model),
 })
 
 remind_class_invalid_id = api.model("RemindClassInvalidId", {
@@ -146,7 +155,6 @@ class RecurringClassStrategy:
         return {MSG: "Failed to create classes"}, HTTPStatus.BAD_REQUEST
 
 @api.route("/create-class")
-
 class CreateClass(Resource):
     def __init__(self, api=None, *args, **kwargs):
         user_resource = kwargs.pop("user_resource", None)
@@ -279,16 +287,6 @@ view_members_forbidden = api.model("ViewMembersForbidden", {
     MSG: fields.String(example="Only the trainer of this class can view its members")
 }) # swagger ui response for unauthorized role
 
-
-# def _members_error_response(result): # handles the various errors we expect to have when getting class members
-#     if result in (BookingResult.INVALID_ID, "invalid_class_id"):
-#         return {MSG: "Invalid class id"}, HTTPStatus.UNPROCESSABLE_ENTITY
-#     if result in (BookingResult.NOT_FOUND, "class_not_found"):
-#         return {MSG: "Class not found"}, HTTPStatus.NOT_FOUND
-#     if result in (BookingResult.NOT_OWNED, "not_your_class"):
-#         return {MSG: "Only the trainer of this class can view its members"}, HTTPStatus.FORBIDDEN
-#     return None
-
 def _get_trainer_id():
     current_user = get_jwt_identity()
     user = UserResource().get_user(current_user)
@@ -345,16 +343,8 @@ class ClassMembers(Resource):
         if isinstance(result, ClassResult):
             return result.resolves()
         
-        # if isinstance(result, BookingResult):
-        #     response_data, status_code = BOOKING_RESPONSE_MAP.get(
-        #         result, 
-        #         ({MSG: "An error occurred"}, HTTPStatus.BAD_REQUEST)
-        #     )
-        #     return response_data, status_code
-
         return {"members": result}, HTTPStatus.OK # otherwise return result, all went well
     
-
 @api.route("/remind/<string:class_id>")
 class ClassReminder(Resource):
     @jwt_required()

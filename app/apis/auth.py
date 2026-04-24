@@ -28,11 +28,13 @@ login_model = api.model("Login", {
 # success or error models
 login_success_model = api.model("LoginSuccess", {
     MSG: fields.String(example="Logged in successfully"),
-    "access_token": fields.String(example="hjX02ksdkKkjqD...")
+    "access_token": fields.String(example="hjX02ksdkKkjqD..."),
+    "telegram_synced": fields.Boolean(description="Whether the user's Telegram is synced", example=False)
 })
 
 register_success_model = api.model("RegisterSuccess", {
-    MSG: fields.String(example="User registered successfully")
+    MSG: fields.String(example="User registered successfully"),
+    "telegram_connect_link": fields.String(example="https://t.me/SWE_Fitness_Booking_Bot?start=connect_token_abc123")
 })
 
 login_error_model = api.model("LoginError", {
