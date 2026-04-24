@@ -10,7 +10,7 @@
 
 - Single Responsibility Principle (SRP) ClassReminder.post
 
-  Fix: _TODO: add ur fix explanation here_
+  Fix: Added helper functions to remove all logic from the actual endpoint, was also fixed through the new notification feature.
 
 - Dependency Inversion Principle (DIP) CreateClass.post
 
@@ -103,7 +103,7 @@ To ensure everyone collaborates equally, similarly to Sprint 3A, we started by c
 
 **Task 4**
 
-- TODO: check CI pipeline
+- CI pipeline works as before, does not need to be changed.
 
 **Task 5**
 
