@@ -14,7 +14,7 @@
 
 - Dependency Inversion Principle (DIP) CreateClass.post
 
-  Fix: _TODO: add ur fix explanation here_
+  Fix: Fixed the DIP issue by moving the creation of UserResource and ClassResource out of the post() method and into the constructor. The endpoint now uses self.user_resource and self.class_resource, which can be passed in from outside or default to the real implementations. This makes the method less hardcoded, easier to test with mocks, and more flexible if the database/resource layer changes later.
 
 - Open/Closed Principle (OCP) ClassResource.book\*class
 
@@ -28,7 +28,8 @@
 
 - Duplicate Code: Identical validation logic for checking if string fields are non-empty
 
-  Fix: _TODO: add ur fix explanation here_
+  Fix: I fixed the duplicate code by moving the repeated string validation logic into a helper function, are_non_empty_strings(). This removed redundancy, made the endpoints cleaner, and ensures any future changes to validation only need to be made in one place.
+
 
 - Long Method: One endpoint method handles authorization, ownership checks, class lookup, date validation, email iteration, error aggregation, and response construction in a single block
 
