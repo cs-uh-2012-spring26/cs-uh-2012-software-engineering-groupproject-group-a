@@ -32,7 +32,7 @@
 
 - Long Method: One endpoint method handles authorization, ownership checks, class lookup, date validation, email iteration, error aggregation, and response construction in a single block
 
-  Fix: _TODO: add ur fix explanation here_
+  Fix: Similar to how the design priciniple violation was fixed, I added helper methods, completely removed all logic from endpoint and delegated it to the notification service and now it only called the send_reminders function. 
 
 - Primitive Obsession: Usage of primitive types instead of small objects for simple tasks
   Fix: Here a few methods, ClassResource.get_class_by_id, ClassResource.get_class_members, ClassResource.book_class, and ClassBooking.post were returning plain strings. All their return types are the same type of error messages which we have implemented to fix OCP violations. Instead of returning strings, these methods now return the enumeration class with the different error message types. 
