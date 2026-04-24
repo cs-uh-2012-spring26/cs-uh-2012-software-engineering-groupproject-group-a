@@ -112,6 +112,7 @@ In order to ensure that you are able to test the protected API endpoints (such a
 
 1. Use the `auth/register` endpoint to create an account.
    1. Use `"trainer_code": "IAMATRAINER"` for creating a trainer account, otherwise role will be member.
+   1. **IMPORTANT**: The endpoint will now also provide you with a `"telegram_connect_link"`. To enable Telegram notifications, please refer to the section below, _Telegram Notificaitons_.
 
 2. After registration, use the `auth/login` endpoint to log in (this will provide you with an authentication token)
    1. **IMPORTANT**: Make sure to copy the token from `"access_token": "hjX02ksdkKkjqD..."` in the JSON response.
@@ -124,7 +125,8 @@ In order to ensure that you are able to test the protected API endpoints (such a
 After registering, the response includes a Telegram link. To link your account:
 
 1. Open the link on a device where your Telegram account is active and tap **Start** to start the bot.
-2. Log in to the app: the bot will automatically send you a confirmation message once your Telegram account is successfully linked.
+2. After having started the bot, you will not get any reply. To finish the sync, go ahead and continue with the login step.
+3. Log in to the app: the bot will automatically send you a confirmation message once your Telegram account is successfully linked.
 
 ### Configuring Notifications: `POST /reminders/configure`
 
