@@ -1,5 +1,5 @@
 import pytest
-
+from app.apis import MSG
 
 def test_login_success(client, seeded_member):
     response = client.post(
@@ -9,7 +9,7 @@ def test_login_success(client, seeded_member):
 
     assert response.status_code == 200
     data = response.get_json()
-    assert data["message"] == "Logged in successfully"
+    assert data[MSG] == "Logged in successfully"
     assert isinstance(data.get("access_token"), str)
     assert len(data["access_token"]) > 0
 
