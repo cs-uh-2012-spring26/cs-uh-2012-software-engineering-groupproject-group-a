@@ -1,0 +1,33 @@
+name: CD Deploy to Render
+
+on:
+  workflow_run:
+    workflows: ["CI Unit Tests"]
+    types: [completed]
+    branches: ["main"]
+
+jobs:
+  deploy:
+    name: Deploy to Render
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+
+    env:
+      RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+
+    steps:
+      - name: Validate Render deploy hook
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
+            echo "RENDER_DEPLOY_HOOK secret is required." >&2
+            exit 1
+          fi
+
+      - name: Trigger Render deployment
+        run: |
+          curl --fail --silent --show-error --request POST "$RENDER_DEPLOY_HOOK"
