@@ -42,6 +42,22 @@ This flask web app uses:
 [pytest-flask]: https://flask.palletsprojects.com/en/stable/testing/
 [mongomock]: https://docs.mongoengine.org/guide/mongomock.html
 
+## Deployed API
+
+### URL to deployed API
+
+[https://cs-uh-2012-software-engineering.onrender.com/](https://cs-uh-2012-software-engineering.onrender.com/)
+
+**Note**: Since we are using the free tier version of Render, please allow for a minute or so for the server to spin up upon accessing the URL.
+
+### Virtual Machine Set Up
+
+Since the suggest DigitalOcean virtual machine was unavailable due to a paywall and no available credits, we resorted to using [Render.com](https://render.com/) to set up the virtual machine and deploy our website through their service. For the continuous deployment, Render provides us with a `RENDER_DEPLOY_HOOK` which we set up as a GitHub secret to trigger the deployment on pushes or changes to the main branch.
+
+### Docker and MongoDB Cluster
+
+Since the free tier of Render is limited, we host the MongoDB database using a [MongoDB Atlas](https://www.mongodb.com/products/platform/atlas-database), which allows us to have a universal database for the deployed service. The actual deployment on the Render Virtual Machine is done by running `docker compose up`, with the deploy variable env variables directly on the server.
+
 ## Running Locally
 
 ### Ensuring a local database instance is running
@@ -69,11 +85,11 @@ If the status is anything other than **started**, there might be a local issue w
 
 ### Setting up the environment
 
-1. Run the following command (or equivalent) in your terminal to copy the .env: `cp .samplenv .env` (on macOS & Linux)
+1. Run the following command (or equivalent) in your terminal to copy the .env: `cp example.env .env` (on macOS & Linux)
    1. If your local MongoDB instance is not running properly, keep `MOCK_DB=true`. Otherwise, if you want persistent data, change `MOCK_DB=false`.
 
 2. With a text editor of your choice, open the .env and adjust the following variables:
-   1. Please replace the `SENDGRID_API_KEY` and `SENDGRID_FROM_EMAIL` with the actual API key and email found [HERE](https://drive.google.com/file/d/1DFUREQG2wdz_tl0wQeTQI-xLspBQHyWm/view?usp=sharing).
+   1. The following variables are sensitive, therefore please copy and paste them directly from [the protected link here](https://drive.google.com/file/d/1DFUREQG2wdz_tl0wQeTQI-xLspBQHyWm/view?usp=sharing). `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`, `TELEGRAM_BOT_TOKEN`, and `TELEGRAM_BOT_USERNAME`.
 3. Run `make dev_env` to create a virtual environment and install dependencies
 
 ---
