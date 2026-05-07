@@ -78,6 +78,22 @@ If the status is anything other than **started**, there might be a local issue w
 
 ---
 
+### Running with Docker
+
+Make sure Docker is running, then start the backend and MongoDB with:
+
+    docker compose up --build
+
+The API will be available at [http://localhost:8000](http://localhost:8000).
+
+Docker Compose reads your `.env` file and overrides the database settings so the app connects to the MongoDB container. You do not need to run MongoDB locally when using Docker.
+
+To stop the containers, press `ctrl-c`, then run:
+
+    docker compose down
+
+---
+
 ### Running the server and tests
 
 There are multiple ways to start the application or just run the tests.
