@@ -13,3 +13,5 @@ flask_cors==6.0.1
 python-dateutil==2.9.0
 sendgrid==6.11.0
 requests==2.33.1
+mongomock
+gunicorn==23.0.0
