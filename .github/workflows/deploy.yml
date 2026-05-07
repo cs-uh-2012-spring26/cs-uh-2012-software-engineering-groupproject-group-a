@@ -1,0 +1,71 @@
+name: CD Deploy
+
+on:
+  workflow_run:
+    workflows: ["CI Unit Tests"]
+    types: [completed]
+    branches: ["main"]
+
+jobs:
+  deploy:
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+
+    env:
+      DEPLOY_DIR: /home/ubuntu/fitness-api
+
+    steps:
+      - name: Checkout tested commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Create production environment file
+        run: |
+          cat > .env <<'EOF'
+          DB_URI=${{ secrets.PROD_DB_URI }}
+          DB_NAME=${{ secrets.PROD_DB_NAME }}
+          MOCK_DB=false
+          DEBUG=false
+          JWT_SECRET_KEY=${{ secrets.PROD_JWT_SECRET_KEY }}
+          SENDGRID_API_KEY=${{ secrets.PROD_SENDGRID_API_KEY }}
+          SENDGRID_FROM_EMAIL=${{ secrets.PROD_SENDGRID_FROM_EMAIL }}
+          TELEGRAM_BOT_TOKEN=${{ secrets.PROD_TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_BOT_USERNAME=${{ secrets.PROD_TELEGRAM_BOT_USERNAME }}
+          EOF
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.LIGHTSAIL_SSH_KEY }}" > ~/.ssh/lightsail
+          chmod 600 ~/.ssh/lightsail
+
+      - name: Package application
+        run: |
+          tar \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='.venv' \
+            --exclude='htmlcov' \
+            --exclude='__pycache__' \
+            -czf deployment.tar.gz .
+
+      - name: Copy application to VM
+        run: |
+          ssh -i ~/.ssh/lightsail -o StrictHostKeyChecking=no \
+            ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} \
+            "mkdir -p ${DEPLOY_DIR}"
+          scp -i ~/.ssh/lightsail -o StrictHostKeyChecking=no \
+            deployment.tar.gz \
+            ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }}:/tmp/fitness-api-deployment.tar.gz
+
+      - name: Deploy with Docker Compose
+        run: |
+          ssh -i ~/.ssh/lightsail -o StrictHostKeyChecking=no \
+            ${{ secrets.LIGHTSAIL_USER }}@${{ secrets.LIGHTSAIL_HOST }} \
+            "rm -rf ${DEPLOY_DIR:?}/* && \
+             tar -xzf /tmp/fitness-api-deployment.tar.gz -C ${DEPLOY_DIR} && \
+             cd ${DEPLOY_DIR} && \
+             docker compose -p fitness-api up -d --build --remove-orphans"

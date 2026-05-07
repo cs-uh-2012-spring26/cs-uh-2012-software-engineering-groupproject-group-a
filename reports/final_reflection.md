@@ -10,7 +10,7 @@ Throughout this project, I learned to use GitHub in a team environment properly 
 
 ## Tokla Roeum
 
-...
+A few important things I learned throughout this project were collaboration, CI/CD, and design decisions. At first, it was challenging working as a team on the same codebase using github which was further complicated since the move to online learning. Towards the end of the project, I got a hang of the workflow and ever since we implemented CI, it was even easier to see whether changes made were working. Collaboration is an important aspect of this project and what made it fun as well. The difficult part was making smart design decisions which became especially clear when we were tasked with refactoring the codebase. I also became much more confident using Git for version control. Initially, concepts like branching and merging were difficult to grasp, but they became clearer and more valuable the more I used them.
 
 ## Dijar Selami
 
