@@ -14,4 +14,4 @@ Throughout this project, I learned to use GitHub in a team environment properly 
 
 ## Dijar Selami
 
-...
+The most important thing i learned was working in an organized environment on the same project. Learning how to develop and contribute a project in a synchronized matter by using the github tools so everyone can be on the same page at all times. The most fun part was writing the comments on the pull requests and accepting them. The most difficult part was writing the reflections, and creating the diagrams, and the whole refraction we had to do. I am better at creating an application which is somewhat more standardized to industry standards, work with teammates without ruining or messing up the code from unwanted pushes or miscommunication and creating a scalable program.
