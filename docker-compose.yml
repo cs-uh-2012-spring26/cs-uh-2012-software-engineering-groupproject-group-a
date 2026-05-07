@@ -6,7 +6,6 @@ services:
     env_file:
       - .env
     environment:
-      - MONGO_URI=mongodb://mongo:27017
       - MOCK_DB=false
     depends_on:
       - mongo
