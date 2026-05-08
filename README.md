@@ -85,6 +85,10 @@ If the status is anything other than **started**, there might be a local issue w
 
 ### Setting up the environment
 
+**NOTE:** If you are going to run with docker locally ensure that your local .env has `MONGO_URI=mongodb://mongo:27017`, as it is in the example.env.
+
+However, if you will be running the application without docker, you need to change it for the localhost version, `MONGO_URI=mongodb://localhost:27017`
+
 1. Run the following command (or equivalent) in your terminal to copy the .env: `cp example.env .env` (on macOS & Linux)
    1. If your local MongoDB instance is not running properly, keep `MOCK_DB=true`. Otherwise, if you want persistent data, change `MOCK_DB=false`.
 
